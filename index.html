@@ -637,6 +637,7 @@
     border-radius: 100px;
     font-size: 11px;
     font-weight: 700;
+    white-space: nowrap;
   }
   .pts-exact { background: var(--success-bg); color: var(--success); }
   .pts-diff { background: var(--info-bg); color: var(--info); }
@@ -1286,7 +1287,7 @@
           <div><span class="sl-pill diff"><b id="legendDiff">3</b></span> goal diff</div>
           <div><span class="sl-pill outcome"><b id="legendOutcome">2</b></span> 1X2 only</div>
           <div><span class="sl-pill bonus"><b id="legendBonus">23</b></span> bonus picks</div>
-          <div><span class="sl-pill mult"><b>×2</b></span> � MOTD bonus</div>
+          <div><span class="sl-pill mult"><b>×2</b></span> 🎯 MOTD bonus</div>
         </div>
       </div>
       <div class="hero-stat">
@@ -1358,6 +1359,7 @@
             <th class="num" title="Exact score">EXACT</th>
             <th class="num" title="Goal difference">DIFF</th>
             <th class="num" title="Outcome only (1X2)">1X2</th>
+            <th class="num" title="Points from match predictions">Match</th>
             <th class="num">Bonus</th>
             <th class="num">Achv.</th>
             <th class="num">Total</th>
@@ -1536,6 +1538,19 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="pinModal" aria-hidden="true">
+  <div class="modal" style="max-width:380px;">
+    <h2 id="pinModalTitle" style="margin-bottom:6px; font-size:18px;">PIN</h2>
+    <p class="subtitle" id="pinModalDesc" style="margin-top:0;">Enter PIN.</p>
+    <input type="password" id="pinModalInput" class="filter-search" autocomplete="new-password" inputmode="numeric" style="width:100%; font-size:18px; letter-spacing:6px; text-align:center;" placeholder="••••">
+    <div id="pinModalError" style="color: var(--danger); font-size:12px; margin-top:6px; min-height:16px;"></div>
+    <div class="modal-actions">
+      <button class="btn" id="pinModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="pinModalOk">OK</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* =====================================================
@@ -1991,6 +2006,45 @@ function toast(msg, kind) {
 }
 
 function uniq(arr) { return Array.from(new Set(arr)); }
+
+// pinPrompt: opens a small modal with type=password input. Returns Promise<string|null>.
+// Allows empty input (when allowEmpty=true — used to mean "no PIN"). Cancel returns null.
+function pinPrompt({ title, desc, allowEmpty = false, error = "" } = {}) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("pinModal");
+    const input = document.getElementById("pinModalInput");
+    const errEl = document.getElementById("pinModalError");
+    const titleEl = document.getElementById("pinModalTitle");
+    const descEl = document.getElementById("pinModalDesc");
+    titleEl.textContent = title || "PIN";
+    descEl.textContent = desc || "Enter PIN.";
+    errEl.textContent = error || "";
+    input.value = "";
+    modal.setAttribute("aria-hidden", "false");
+    setTimeout(() => input.focus(), 50);
+
+    const cleanup = () => {
+      modal.setAttribute("aria-hidden", "true");
+      input.removeEventListener("keydown", onKey);
+      document.getElementById("pinModalOk").onclick = null;
+      document.getElementById("pinModalCancel").onclick = null;
+    };
+    const submit = () => {
+      const v = input.value;
+      if (!v && !allowEmpty) { errEl.textContent = "Please enter a PIN"; return; }
+      cleanup();
+      resolve(v);
+    };
+    const cancel = () => { cleanup(); resolve(null); };
+    const onKey = e => {
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
+      if (e.key === "Escape") { e.preventDefault(); cancel(); }
+    };
+    input.addEventListener("keydown", onKey);
+    document.getElementById("pinModalOk").onclick = submit;
+    document.getElementById("pinModalCancel").onclick = cancel;
+  });
+}
 
 /* =====================================================
    CONFETTI \u2014 lightweight DOM-based burst for exact-hit celebrations.
@@ -2512,12 +2566,13 @@ function renderMatchHTML(m) {
     return `<button class="reax ${mine ? "mine" : ""}" data-emoji="${e}" title="${users.map(escapeHtml).join(", ") || "react"}">${e}${count > 0 ? `<span class="reax-count">${count}</span>` : ""}</button>`;
   }).join("");
 
-  // Trash talk (visible always for self, others' visible only after lock)
+  // Trash talk (visible always for self; others' visible after kick-off OR once admin enters a result)
   const myTalk = me ? (((state.trashTalk || {})[me] || {})[m.id] || "") : "";
   const otherTalk = [];
+  const showOthers = locked || hasResult || state.adminMode;
   for (const u of state.users) {
     if (u.name === me) continue;
-    if (!locked && !state.adminMode) continue; // only after lock
+    if (!showOthers) continue;
     const t = ((state.trashTalk || {})[u.name] || {})[m.id];
     if (t) otherTalk.push({ user: u.name, text: t });
   }
@@ -3034,7 +3089,7 @@ function renderLeaderboard() {
   const body = $("#leaderboardBody");
   const board = calcLeaderboard();
   if (board.length === 0) {
-    body.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="ico">👥</div><div class="ttl">No players</div><div>Add players in the Settings tab.</div></div></td></tr>`;
+    body.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="ico">👥</div><div class="ttl">No players</div><div>Add players in the Settings tab.</div></div></td></tr>`;
   } else {
     body.innerHTML = board.map((r, i) => {
       const rank = i + 1;
@@ -3056,6 +3111,7 @@ function renderLeaderboard() {
           <td class="num" style="color: var(--success); font-weight:700;">${r.exact}</td>
           <td class="num" style="color: var(--info); font-weight:600;">${r.diff}</td>
           <td class="num" style="color: var(--warning); font-weight:600;">${r.outcome}</td>
+          <td class="num">${r.matchPoints}</td>
           <td class="num">${r.bonusPoints}</td>
           <td class="num">${r.achievementPoints || 0}</td>
           <td class="num pts-total">${r.total}</td>
@@ -3526,7 +3582,11 @@ async function addUser(name) {
     toast("Player already exists", "error");
     return;
   }
-  const pin = prompt(`Optional PIN for "${trimmed}" (so nobody else picks your profile).\nLeave empty for no PIN.`, "");
+  const pin = await pinPrompt({
+    title: `PIN for "${trimmed}"`,
+    desc: "Optional — if set, others can't pick this profile without it. Leave empty for no PIN.",
+    allowEmpty: true
+  });
   if (pin === null) return; // cancelled
   const color = AVATAR_COLORS[state.users.length % AVATAR_COLORS.length];
   const u = { name: trimmed, color, createdAt: Date.now() };
@@ -3553,7 +3613,10 @@ async function switchToProfile(name) {
   const u = state.users.find(x => x.name === name);
   if (!u) return;
   if (u.pinHash) {
-    const pin = prompt(`Enter PIN for "${name}":`, "");
+    const pin = await pinPrompt({
+      title: `PIN for "${name}"`,
+      desc: "Enter the PIN to switch to this profile."
+    });
     if (pin === null) return;
     const hash = await sha256Hex(pin.trim());
     if (hash !== u.pinHash) {
