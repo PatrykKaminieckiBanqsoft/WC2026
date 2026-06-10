@@ -2332,11 +2332,31 @@ function calcGroupStandings(groupId) {
 /* =====================================================
    RENDERING
    ===================================================== */
+// True if the user is interacting with something in a match tile (typing a score,
+// typing trash talk, hovering over a reaction). We skip the heavy renderMatches() pass
+// in that case so background polls don't kill focus, drop the value being typed, or
+// undo a half-finished click. A queued render will fire on the next blur.
+let _pendingMatchRender = false;
+function userIsInteractingWithMatches() {
+  const a = document.activeElement;
+  if (!a) return false;
+  if (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "BUTTON") {
+    if (a.closest(".match")) return true;
+  }
+  return false;
+}
+
 function render() {
   renderHeader();
   renderTabsBadges();
   renderHero();
-  renderMatches();
+  if (userIsInteractingWithMatches()) {
+    // Defer the match grid re-render until the user clicks away.
+    _pendingMatchRender = true;
+  } else {
+    renderMatches();
+    _pendingMatchRender = false;
+  }
   renderBonus();
   renderStandings();
   renderBracket();
@@ -2351,6 +2371,17 @@ function render() {
   // Wrapped in try so a render still completes if confetti fails for any reason.
   try { checkExactHits(); } catch (e) { console.warn("checkExactHits failed", e); }
 }
+
+// When focus leaves the matches grid, flush any deferred match-grid render so
+// teammates' fresh picks/reactions become visible without forcing a manual refresh.
+document.addEventListener("focusout", () => {
+  setTimeout(() => {
+    if (_pendingMatchRender && !userIsInteractingWithMatches()) {
+      _pendingMatchRender = false;
+      renderMatches();
+    }
+  }, 100);
+});
 
 function renderHeader() {
   const u = state.currentUser;
@@ -2479,14 +2510,10 @@ function renderMatches() {
   list.innerHTML = html.join("");
 
   // Attach event handlers via rebindMatch — keeps wiring (score inputs, expand,
-  // reactions, trash talk) in a single place so future additions land for every match tile.
+  // reactions, trash talk) in a single place. rebindMatch also restores the expand panel
+  // content for matches that were expanded before this re-render.
   $$("#matchesList .match").forEach(node => {
-    const matchId = Number(node.dataset.id);
-    rebindMatch(matchId);
-    // If this match was expanded before re-render, restore its content
-    if (state.expandedMatches && state.expandedMatches.includes(matchId)) {
-      renderExpandContent(node, matchId);
-    }
+    rebindMatch(Number(node.dataset.id));
   });
 }
 
@@ -2696,6 +2723,10 @@ function rebindMatch(matchId) {
   teamEdits.forEach(t => t.addEventListener("click", e => onEditTeam(e, matchId)));
   const expandBtn = node.querySelector(".match-actions");
   if (expandBtn) expandBtn.addEventListener("click", () => toggleExpand(node, matchId));
+  // If this match was expanded before re-render, restore its picks panel content
+  if (state.expandedMatches && state.expandedMatches.includes(matchId)) {
+    renderExpandContent(node, matchId);
+  }
   // Reactions
   node.querySelectorAll(".reax").forEach(btn => {
     btn.addEventListener("click", () => toggleReaction(matchId, btn.dataset.emoji));
@@ -2731,12 +2762,22 @@ function toggleReaction(matchId, emoji) {
   if (arr.length === 0) delete state.reactions[matchId][emoji];
   if (Object.keys(state.reactions[matchId]).length === 0) delete state.reactions[matchId];
   saveState();
-  // Re-render just this match's interaction bar
+  // In-place update of just the reactions row so we don't replace the whole node
+  // (which would kill the trash-talk input focus or any pending click).
   const node = document.querySelector(`.match[data-id="${matchId}"]`);
-  if (node) {
-    node.outerHTML = renderMatchHTML(MATCHES.find(x => x.id === matchId));
-    rebindMatch(matchId);
-  }
+  if (!node) return;
+  const row = node.querySelector(".reax-row");
+  if (!row) return;
+  const matchReactions = (state.reactions || {})[matchId] || {};
+  row.innerHTML = REACTION_EMOJIS.map(e => {
+    const users = matchReactions[e] || [];
+    const mine = users.includes(me);
+    const count = users.length;
+    return `<button class="reax ${mine ? "mine" : ""}" data-emoji="${e}" title="${users.map(escapeHtml).join(", ") || "react"}">${e}${count > 0 ? `<span class="reax-count">${count}</span>` : ""}</button>`;
+  }).join("");
+  row.querySelectorAll(".reax").forEach(btn => {
+    btn.addEventListener("click", () => toggleReaction(matchId, btn.dataset.emoji));
+  });
 }
 
 function setTrashTalk(matchId, text, refresh) {
@@ -2753,20 +2794,48 @@ function setTrashTalk(matchId, text, refresh) {
   else delete state.trashTalk[me][matchId];
   if (Object.keys(state.trashTalk[me]).length === 0) delete state.trashTalk[me];
   if (clean !== (prev || "")) saveState();
-  // After Enter / blur: refresh just this match tile so the saved bubble + tag appear.
+  // After Enter / blur: update the saved tag and my own bubble in place \u2014 no node replacement,
+  // so we don't kill focus or interrupt clicks on neighbouring controls.
   if (refresh) {
     const node = document.querySelector(`.match[data-id="${matchId}"]`);
-    if (node) {
-      node.outerHTML = renderMatchHTML(m);
-      rebindMatch(matchId);
-      // Re-focus the input so the user can keep typing if they want.
-      const newInput = document.querySelector(`.match[data-id="${matchId}"] [data-action='tt']`);
-      if (newInput) {
-        newInput.focus();
-        const v = newInput.value;
-        newInput.value = "";
-        newInput.value = v;
+    if (!node) return;
+    // 1) Toggle the green "saved" pill next to the input
+    const ttRow = node.querySelector(".trash-talk");
+    if (ttRow) {
+      let saved = ttRow.querySelector(".tt-saved");
+      if (clean) {
+        if (!saved) {
+          saved = document.createElement("span");
+          saved.className = "tt-saved";
+          saved.title = "Saved \u2014 teammates will see it after kick-off";
+          saved.textContent = "\u2713 saved";
+          ttRow.appendChild(saved);
+        }
+      } else if (saved) {
+        saved.remove();
       }
+    }
+    // 2) Update my own bubble below the input. Others' bubbles aren't touched.
+    let bubbles = node.querySelector(".trash-talk-bubbles");
+    const selfBubble = bubbles ? bubbles.querySelector(".ttb.self") : null;
+    if (clean) {
+      const html = `<div class=\"ttb self\"><span class=\"ttb-user\" style=\"background:${avatarColor(me)};\">${initials(me)}</span><span class=\"ttb-text\">${escapeHtml(clean)}</span><span class=\"ttb-you\">you</span></div>`;
+      if (!bubbles) {
+        // Insert the bubbles container right after the trash-talk row
+        const div = document.createElement("div");
+        div.className = "trash-talk-bubbles";
+        div.innerHTML = html;
+        ttRow.insertAdjacentElement("afterend", div);
+      } else if (selfBubble) {
+        // Replace just the self bubble (text may have changed)
+        selfBubble.outerHTML = html;
+      } else {
+        // Prepend self bubble before others
+        bubbles.insertAdjacentHTML("afterbegin", html);
+      }
+    } else if (selfBubble) {
+      selfBubble.remove();
+      if (bubbles && bubbles.children.length === 0) bubbles.remove();
     }
   }
 }
@@ -3943,9 +4012,15 @@ async function pullShared() {
     }
     const data = await res.json();
     if (data && data.format === "mundial2026-typer-v1") {
+      const incomingHash = JSON.stringify(stripVolatile(data));
+      // No-op: bin hasn't changed since the last successful sync
+      if (incomingHash === lastSnapshotHash) {
+        if (state.syncStatus !== "connected") setSyncStatus("connected");
+        return;
+      }
       mergeFromShared(data);
       saveStateLocalOnly();
-      lastSnapshotHash = JSON.stringify(stripVolatile(data));
+      lastSnapshotHash = incomingHash;
       render();
       if (state.syncStatus !== "connected") setSyncStatus("connected");
     }
