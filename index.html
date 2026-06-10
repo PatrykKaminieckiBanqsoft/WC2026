@@ -2629,7 +2629,9 @@ function renderSettings() {
             state.users = state.users.filter(u => u.name !== name);
             delete state.predictions[name];
             delete state.bonus[name];
-            if (!state.deletedUsers.includes(name)) state.deletedUsers.push(name);
+            // Tombstone with timestamp so a future re-add (with newer createdAt) can override it
+            state.deletedUsers = (state.deletedUsers || []).filter(t => (typeof t === "string" ? t : t.name).toLowerCase() !== name.toLowerCase());
+            state.deletedUsers.push({ name, at: Date.now() });
             if (state.currentUser === name) state.currentUser = state.users[0]?.name || null;
             saveState();
             render();
@@ -2880,7 +2882,12 @@ async function addUser(name) {
     u.pinHash = await sha256Hex(pin.trim());
   }
   // Remove this name from deletedUsers if it's there (case-insensitive) — un-delete on re-add
-  state.deletedUsers = (state.deletedUsers || []).filter(n => n.toLowerCase() !== trimmed.toLowerCase());
+  // and the new user's createdAt (now) overrides any older tombstone, so merges from teammates
+  // who still have the old tombstone in their cache will leave the user alive.
+  state.deletedUsers = (state.deletedUsers || []).filter(t => {
+    const tname = typeof t === "string" ? t : t.name;
+    return tname.toLowerCase() !== trimmed.toLowerCase();
+  });
   state.users.push(u);
   if (!state.currentUser) state.currentUser = trimmed;
   saveStateLocalOnly();
@@ -2995,35 +3002,46 @@ function mergeImported(data) {
 function mergeFromShared(incoming) {
   const myName = state.currentUser;
 
-  // Compute deletions: union of local + incoming, BUT excluding any user that has been re-added locally
-  // (re-adding a user counts as un-delete, propagated to the team via push).
-  const localActiveLower = new Set((state.users || []).map(u => u.name.toLowerCase()));
-  const rawDeletions = [...(incoming.deletedUsers || []), ...(state.deletedUsers || [])];
-  const deletions = new Set(rawDeletions.filter(n => !localActiveLower.has(String(n).toLowerCase())));
-  for (const name of deletions) {
-    delete state.predictions[name];
-    delete state.bonus[name];
+  // Tombstones: union local + incoming, keep latest timestamp per name (case-insensitive).
+  // Legacy entries are plain strings; treat them as tombstones with at=0 so any user with createdAt > 0 survives.
+  const tombMap = new Map();
+  const all = [...(state.deletedUsers || []), ...(incoming.deletedUsers || [])];
+  for (const t of all) {
+    if (!t) continue;
+    const obj = typeof t === "string" ? { name: t, at: 0 } : { name: t.name, at: t.at || 0 };
+    const key = obj.name.toLowerCase();
+    const existing = tombMap.get(key);
+    if (!existing || obj.at > existing.at) tombMap.set(key, obj);
   }
-  state.deletedUsers = Array.from(deletions);
+  const tombArr = Array.from(tombMap.values());
+  state.deletedUsers = tombArr;
 
-  // Users: union (no duplicates), excluding deleted
+  function isAlive(u) {
+    const t = tombMap.get(u.name.toLowerCase());
+    if (!t) return true;
+    return (u.createdAt || 0) > (t.at || 0);
+  }
+
+  // Users: union local + incoming (filter dead ones)
   const allUsers = [...state.users];
   for (const u of (incoming.users || [])) {
-    if (deletions.has(u.name)) continue;
     if (!allUsers.some(x => x.name === u.name)) allUsers.push(u);
   }
-  state.users = allUsers.filter(u => !deletions.has(u.name));
+  state.users = allUsers.filter(isAlive);
+
+  // Drop predictions/bonus belonging to dead users
+  const aliveNames = new Set(state.users.map(u => u.name));
 
   // Predictions: incoming wins for everyone except me
   const newPreds = { ...(incoming.predictions || {}) };
   if (myName && state.predictions[myName]) newPreds[myName] = state.predictions[myName];
-  for (const name of deletions) delete newPreds[name];
+  for (const k of Object.keys(newPreds)) if (!aliveNames.has(k)) delete newPreds[k];
   state.predictions = newPreds;
 
-  // Bonus picks: same rule
+  // Bonus: same
   const newBonus = { ...(incoming.bonus || {}) };
   if (myName && state.bonus[myName]) newBonus[myName] = state.bonus[myName];
-  for (const name of deletions) delete newBonus[name];
+  for (const k of Object.keys(newBonus)) if (!aliveNames.has(k)) delete newBonus[k];
   state.bonus = newBonus;
 
   // Results, overrides, scoring, bonus results: incoming wins
@@ -3041,6 +3059,22 @@ function buildSharedSnapshot(existing) {
   const myName = state.currentUser;
   const base = (existing && existing.format === "mundial2026-typer-v1") ? existing : null;
 
+  // Tombstones: union local + existing, keep latest per name
+  const tombMap = new Map();
+  const all = [...(state.deletedUsers || []), ...(base?.deletedUsers || [])];
+  for (const t of all) {
+    if (!t) continue;
+    const obj = typeof t === "string" ? { name: t, at: 0 } : { name: t.name, at: t.at || 0 };
+    const key = obj.name.toLowerCase();
+    const existingT = tombMap.get(key);
+    if (!existingT || obj.at > existingT.at) tombMap.set(key, obj);
+  }
+  const isAlive = (u) => {
+    const t = tombMap.get(u.name.toLowerCase());
+    if (!t) return true;
+    return (u.createdAt || 0) > (t.at || 0);
+  };
+
   // Predictions: keep everything from file, overwrite ONLY my entry with my local copy
   const predictions = { ...(base?.predictions || {}) };
   if (myName) {
@@ -3054,19 +3088,15 @@ function buildSharedSnapshot(existing) {
     else delete bonus[myName];
   }
 
-  // Users: union of file + local
+  // Users: union of file + local, then drop dead ones
   const users = [...(base?.users || [])];
   for (const u of state.users) {
     if (!users.some(x => x.name === u.name)) users.push(u);
   }
-
-  // Apply deletions (admin-only operation, but safe to merge in)
-  const deletions = new Set([...(base?.deletedUsers || []), ...(state.deletedUsers || [])]);
-  for (const name of deletions) {
-    delete predictions[name];
-    delete bonus[name];
-  }
-  const filteredUsers = users.filter(u => !deletions.has(u.name));
+  const filteredUsers = users.filter(isAlive);
+  const aliveNames = new Set(filteredUsers.map(u => u.name));
+  for (const k of Object.keys(predictions)) if (!aliveNames.has(k)) delete predictions[k];
+  for (const k of Object.keys(bonus)) if (!aliveNames.has(k)) delete bonus[k];
 
   // Results / overrides / scoring: if I'm admin, my local copy is authoritative; else keep file's.
   const results = state.adminMode ? state.results : (base?.results || state.results);
@@ -3082,7 +3112,7 @@ function buildSharedSnapshot(existing) {
     exportType: "full-backup",
     exportedAt: new Date().toISOString(),
     users: filteredUsers,
-    deletedUsers: Array.from(deletions),
+    deletedUsers: Array.from(tombMap.values()),
     predictions,
     bonus,
     results,
