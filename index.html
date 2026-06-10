@@ -2879,6 +2879,8 @@ async function addUser(name) {
   if (pin && pin.trim()) {
     u.pinHash = await sha256Hex(pin.trim());
   }
+  // Remove this name from deletedUsers if it's there (case-insensitive) — un-delete on re-add
+  state.deletedUsers = (state.deletedUsers || []).filter(n => n.toLowerCase() !== trimmed.toLowerCase());
   state.users.push(u);
   if (!state.currentUser) state.currentUser = trimmed;
   saveStateLocalOnly();
@@ -2993,8 +2995,11 @@ function mergeImported(data) {
 function mergeFromShared(incoming) {
   const myName = state.currentUser;
 
-  // Apply deletions first
-  const deletions = new Set([...(incoming.deletedUsers || []), ...(state.deletedUsers || [])]);
+  // Compute deletions: union of local + incoming, BUT excluding any user that has been re-added locally
+  // (re-adding a user counts as un-delete, propagated to the team via push).
+  const localActiveLower = new Set((state.users || []).map(u => u.name.toLowerCase()));
+  const rawDeletions = [...(incoming.deletedUsers || []), ...(state.deletedUsers || [])];
+  const deletions = new Set(rawDeletions.filter(n => !localActiveLower.has(String(n).toLowerCase())));
   for (const name of deletions) {
     delete state.predictions[name];
     delete state.bonus[name];
