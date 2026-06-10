@@ -707,6 +707,165 @@
     letter-spacing: 0.5px;
   }
 
+  /* ---------- MOTD + Power Pick pills (topbar) ---------- */
+  .motd-pill {
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+    color: #7c2d12;
+    font-size: 10px; font-weight: 800; padding: 3px 8px;
+    border-radius: 999px; letter-spacing: .4px;
+    box-shadow: 0 1px 2px rgba(251,191,36,0.4);
+  }
+  .pp-pill {
+    background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+    color: white;
+    font-size: 10px; font-weight: 800; padding: 3px 8px;
+    border-radius: 999px; letter-spacing: .4px;
+    box-shadow: 0 1px 2px rgba(139,92,246,0.4);
+  }
+  .match.motd { box-shadow: 0 0 0 2px #fbbf24 inset, 0 1px 3px rgba(0,0,0,0.05); }
+  .match.has-pp { box-shadow: 0 0 0 2px #8b5cf6 inset, 0 1px 3px rgba(0,0,0,0.05); }
+  .match.motd.has-pp { box-shadow: 0 0 0 2px #fbbf24 inset, 0 0 0 4px #8b5cf6 inset; }
+
+  /* ---------- Wisdom-of-the-crowd pill in result band ---------- */
+  .crowd-pill {
+    background: var(--bg-2); color: var(--text-muted);
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+    border-radius: 999px; margin-left: 8px;
+  }
+
+  /* ---------- Match interaction bar (reactions + power pick btn) ---------- */
+  .match-interaction {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    background: #fafbfd;
+    flex-wrap: wrap;
+  }
+  .reax-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .reax {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: white; border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 9px;
+    font-size: 15px; line-height: 1.2;
+    cursor: pointer; user-select: none;
+    transition: transform .12s, background .15s, border-color .15s;
+  }
+  .reax:hover { transform: translateY(-1px); background: var(--primary-soft); border-color: var(--primary); }
+  .reax.mine { background: #fef3c7; border-color: #fbbf24; }
+  .reax-count {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    margin-left: 2px;
+  }
+  .reax.mine .reax-count { color: #7c2d12; }
+
+  .pp-btn {
+    background: white; border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px;
+    font-size: 12px; font-weight: 600; color: var(--text);
+    cursor: pointer; transition: all .15s;
+  }
+  .pp-btn:hover:not(:disabled) { background: #ede9fe; border-color: #8b5cf6; color: #6b21a8; }
+  .pp-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .pp-btn.pp-active {
+    background: linear-gradient(135deg, #c4b5fd, #8b5cf6); color: white; border-color: #7c3aed;
+  }
+  .pp-btn.pp-active:hover { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+
+  /* ---------- Trash talk ---------- */
+  .trash-talk { padding: 0 12px 8px; }
+  .trash-talk-input {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 10px; font-size: 12px;
+    background: white; color: var(--text);
+    font-family: inherit;
+  }
+  .trash-talk-input:focus { outline: none; border-color: var(--primary); }
+  .trash-talk-input:disabled { background: #f3f4f6; color: var(--text-muted); }
+  .trash-talk-bubbles { padding: 0 12px 8px; display: flex; flex-direction: column; gap: 4px; }
+  .ttb {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-2); border-radius: 12px;
+    padding: 4px 10px 4px 4px; font-size: 12px;
+    max-width: 100%;
+  }
+  .ttb-user {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .ttb-text { color: var(--text); font-style: italic; }
+
+  /* ---------- Daily roast hero card ---------- */
+  .daily-roast {
+    display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 1px solid #fbbf24;
+    border-radius: 12px; padding: 12px 16px;
+    margin: 16px 0 8px;
+  }
+  .daily-roast .dr-ico { font-size: 28px; flex-shrink: 0; }
+  .daily-roast .dr-title { font-weight: 700; color: #7c2d12; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; }
+  .daily-roast .dr-text { color: #78350f; font-size: 14px; margin-top: 2px; }
+
+  /* ---------- Hero jokers tile ---------- */
+  .hero-stat.hero-jokers .value { color: #7c3aed; }
+
+  /* ---------- Achievements ---------- */
+  .achv-row { display: inline-flex; gap: 2px; margin-left: 6px; }
+  .achv-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; font-size: 14px;
+    background: #fef3c7; border-radius: 50%;
+    cursor: help;
+  }
+  .achv-legend { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .achv-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 8px 10px; background: var(--bg-2); border-radius: 8px;
+  }
+  .achv-ico { font-size: 22px; line-height: 1; }
+  .achv-title { font-weight: 700; font-size: 13px; color: var(--text); }
+  .achv-pts {
+    background: var(--success); color: white;
+    font-size: 10px; font-weight: 700; padding: 1px 6px;
+    border-radius: 999px; margin-left: 4px;
+  }
+  .achv-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ---------- Leaderboard side cards ---------- */
+  .lb-side-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin-top: 20px;
+  }
+  .lb-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .lb-card-title { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+  .reverse-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .reverse-table td { padding: 6px 4px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .reverse-table tr:last-child td { border-bottom: none; }
+  .reverse-table .avatar-sm {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    color: white; font-size: 10px; font-weight: 700; margin-right: 6px; vertical-align: middle;
+  }
+
+  /* ---------- Confetti ---------- */
+  #confettiLayer {
+    position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+    pointer-events: none; z-index: 9999; overflow: hidden;
+  }
+  .confetti-particle {
+    position: absolute; border-radius: 1px;
+    will-change: transform, opacity;
+  }
+  @keyframes confetti-fall {
+    0%   { transform: translate(0, -20px) rotate(0deg); opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translate(var(--drift, 0), 100vh) rotate(var(--rot, 720deg)); opacity: 0; }
+  }
+
   /* ---------- Bonus predictions ---------- */
   .bonus-grid {
     display: grid;
@@ -1137,6 +1296,7 @@
           <div><span class="sl-pill diff"><b id="legendDiff">3</b></span> goal diff</div>
           <div><span class="sl-pill outcome"><b id="legendOutcome">2</b></span> 1X2 only</div>
           <div class="sub" style="margin-top:4px;">+ <b id="legendBonus">23</b> bonus picks</div>
+          <div class="sub" style="margin-top:2px;">\ud83c\udccf Power Pick \u00b7 \ud83c\udfaf MOTD: \u00d72</div>
         </div>
       </div>
       <div class="hero-stat">
@@ -1149,7 +1309,14 @@
         <div class="value" id="heroRank">—</div>
         <div class="sub" id="heroRankSub">on the leaderboard</div>
       </div>
+      <div class="hero-stat hero-jokers">
+        <div class="label">\ud83c\udccf Power Picks left</div>
+        <div class="value" id="heroJokers">\u2014</div>
+        <div class="sub" id="heroJokersSub">tap a match to spend</div>
+      </div>
     </div>
+
+    <div id="dailyRoastCard" class="daily-roast" hidden></div>
 
     <div class="filters" id="matchFilters">
       <button class="filter-chip active" data-stage="all">All</button>
@@ -1207,11 +1374,25 @@
             <th class="num" title="Goal difference">DIFF</th>
             <th class="num" title="Outcome only (1X2)">1X2</th>
             <th class="num">Bonus</th>
+            <th class="num">Achv.</th>
             <th class="num">Total</th>
           </tr>
         </thead>
         <tbody id="leaderboardBody"></tbody>
       </table>
+    </div>
+
+    <div class="lb-side-grid">
+      <div class="lb-card">
+        <div class="lb-card-title">\ud83e\udd86 Wooden spoon</div>
+        <p class="subtitle">The honorary bottom of the table \u2014 keep grinding.</p>
+        <div id="reverseLeaderboard"></div>
+      </div>
+      <div class="lb-card">
+        <div class="lb-card-title">\ud83c\udfc5 Achievements legend</div>
+        <p class="subtitle">Each unique medal unlocks +5 pts the first time it triggers.</p>
+        <div id="achievementsLegend"></div>
+      </div>
     </div>
   </section>
 
@@ -1646,12 +1827,21 @@ const state = {
   scoring: { ...DEFAULT_SCORING },
   lastLiveSync: null,  // ISO timestamp of last openfootball sync
   liveAutoSync: false, // auto-sync openfootball every 10 min (admin only)
+  reactions: {},       // { matchId: { emoji: [userName, ...] } }  team-shared
+  trashTalk: {},       // { userName: { matchId: "text up to 80 chars" } } team-shared
+  powerPicks: {},      // { userName: [matchId, matchId, ...] } team-shared; budget = POWER_PICK_BUDGET per user
   ui: { currentTab: "matches", matchFilter: "all", matchOnly: null, searchQuery: "" },
   adminMode: false,        // session-only, never persisted in localStorage
   syncStatus: "connecting", // unconfigured | connecting | connected | error
   syncDetail: "",
-  expandedMatches: []  // session-only: which match cards are currently expanded
+  expandedMatches: [], // session-only: which match cards are currently expanded
+  seenExactMatches: []  // session-only: matchIds for which confetti was already fired locally
 };
+
+// How many Power Picks (2× multiplier jokers) each player gets for the whole tournament.
+const POWER_PICK_BUDGET = 3;
+// Reactions are limited to a fixed emoji palette so it stays light and snackable.
+const REACTION_EMOJIS = ["🔥", "😂", "🤡", "😱", "❤️"];
 
 function loadState() {
   // localStorage holds a full local snapshot (so a refresh works even before the next push to JSONBin).
@@ -1672,6 +1862,9 @@ function loadState() {
       if (saved.scoring && typeof saved.scoring === "object") state.scoring = { ...state.scoring, ...saved.scoring };
       if (saved.lastLiveSync) state.lastLiveSync = saved.lastLiveSync;
       if (typeof saved.liveAutoSync === "boolean") state.liveAutoSync = saved.liveAutoSync;
+      if (saved.reactions && typeof saved.reactions === "object") state.reactions = saved.reactions;
+      if (saved.trashTalk && typeof saved.trashTalk === "object") state.trashTalk = saved.trashTalk;
+      if (saved.powerPicks && typeof saved.powerPicks === "object") state.powerPicks = saved.powerPicks;
     }
   } catch (e) { console.warn("Failed to load state", e); }
 
@@ -1685,6 +1878,10 @@ function loadState() {
   state.bonusResults = state.bonusResults || {};
   state.users = state.users || [];
   state.deletedUsers = state.deletedUsers || [];
+  state.reactions = state.reactions || {};
+  state.trashTalk = state.trashTalk || {};
+  state.powerPicks = state.powerPicks || {};
+  state.seenExactMatches = []; // session-only
   // Normalise tombstones: legacy strings -> {name, at:0}; dedupe by lowercase name keeping latest timestamp
   const _tomb = new Map();
   for (const t of state.deletedUsers) {
@@ -1816,21 +2013,213 @@ function toast(msg, kind) {
 function uniq(arr) { return Array.from(new Set(arr)); }
 
 /* =====================================================
+   CONFETTI \u2014 lightweight DOM-based burst for exact-hit celebrations.
+   No external dependency; ~120 colored particles fall+fade over ~2.5s.
+   ===================================================== */
+function confettiBurst(opts) {
+  const cfg = Object.assign({ count: 120, duration: 2500 }, opts || {});
+  let layer = document.getElementById("confettiLayer");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.id = "confettiLayer";
+    document.body.appendChild(layer);
+  }
+  const colors = ["#fbbf24", "#10b981", "#3b82f6", "#ec4899", "#f97316", "#a855f7", "#06b6d4"];
+  for (let i = 0; i < cfg.count; i++) {
+    const p = document.createElement("div");
+    p.className = "confetti-particle";
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    const x = (Math.random() * 100).toFixed(1);
+    const drift = (Math.random() * 160 - 80).toFixed(0);
+    const rot = (Math.random() * 720).toFixed(0);
+    const dur = cfg.duration + Math.random() * 1000;
+    const delay = Math.random() * 200;
+    const size = 6 + Math.random() * 6;
+    p.style.cssText = `left:${x}vw; top:-12px; width:${size}px; height:${size * 0.6}px; background:${c}; --drift:${drift}px; --rot:${rot}deg; animation: confetti-fall ${dur}ms ${delay}ms linear forwards;`;
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), dur + delay + 50);
+  }
+}
+
+// Track which results we have already celebrated, so confetti fires once per (matchId).
+// We only celebrate for matches that landed since the last sync \u2014 stale results are silent.
+let _lastSeenResults = null;
+function checkExactHits() {
+  const me = state.currentUser;
+  if (!me) { _lastSeenResults = JSON.stringify(state.results || {}); return; }
+  const snapshot = JSON.stringify(state.results || {});
+  if (snapshot === _lastSeenResults) return; // nothing changed
+  const previous = _lastSeenResults ? JSON.parse(_lastSeenResults) : {};
+  for (const m of MATCHES) {
+    const r = state.results[m.id];
+    if (!r || r.h == null || r.a == null) continue;
+    const prev = previous[m.id];
+    const isNew = !prev || prev.h !== r.h || prev.a !== r.a;
+    if (!isNew) continue;
+    if ((state.seenExactMatches || []).includes(m.id)) continue;
+    const pred = (state.predictions[me] || {})[m.id];
+    if (!pred || pred.h !== r.h || pred.a !== r.a) continue;
+    // EXACT! \ud83c\udf89
+    state.seenExactMatches = state.seenExactMatches || [];
+    state.seenExactMatches.push(m.id);
+    confettiBurst();
+    const isKO = m.stage !== "group";
+    const opts = { powerPick: hasPowerPick(me, m.id), motd: isMatchOfTheDay(m) };
+    const { pts } = calcMatchPoints(pred, r, isKO, opts);
+    toast(`\ud83c\udfaf EXACT on ${getTeamName(m, "home")} \u2013 ${getTeamName(m, "away")}: +${pts} pts`, "success");
+  }
+  _lastSeenResults = snapshot;
+}
+
+/* =====================================================
    POINTS CALCULATION
    ===================================================== */
-function calcMatchPoints(pred, result, isKnockout) {
+function calcMatchPoints(pred, result, isKnockout, opts) {
   if (!pred || !result) return { pts: 0, kind: null };
   if (pred.h == null || pred.a == null || result.h == null || result.a == null) return { pts: 0, kind: null };
-  const mult = isKnockout ? Number(state.scoring.multiplier) || 1 : 1;
-  if (pred.h === result.h && pred.a === result.a) return { pts: Math.round(state.scoring.exact * mult), kind: "exact" };
+  const koMult = isKnockout ? Number(state.scoring.multiplier) || 1 : 1;
+  // Power Pick (joker) and Match of the Day each apply an additional ×2 on top of base + KO multiplier.
+  const powerMult = opts && opts.powerPick ? 2 : 1;
+  const motdMult = opts && opts.motd ? 2 : 1;
+  const mult = koMult * powerMult * motdMult;
+  if (pred.h === result.h && pred.a === result.a) return { pts: Math.round(state.scoring.exact * mult), kind: "exact", mult };
   const predDiff = pred.h - pred.a;
   const resDiff = result.h - result.a;
-  if (predDiff === resDiff && predDiff !== 0) return { pts: Math.round(state.scoring.diff * mult), kind: "diff" };
+  if (predDiff === resDiff && predDiff !== 0) return { pts: Math.round(state.scoring.diff * mult), kind: "diff", mult };
   // outcome (1X2): both win-loss-draw
   const predOut = predDiff > 0 ? 1 : predDiff < 0 ? -1 : 0;
   const resOut = resDiff > 0 ? 1 : resDiff < 0 ? -1 : 0;
-  if (predOut === resOut) return { pts: Math.round(state.scoring.outcome * mult), kind: "outcome" };
-  return { pts: 0, kind: null };
+  if (predOut === resOut) return { pts: Math.round(state.scoring.outcome * mult), kind: "outcome", mult };
+  return { pts: 0, kind: null, mult };
+}
+
+// True if this user used a Power Pick joker on this match.
+function hasPowerPick(userName, matchId) {
+  return !!((state.powerPicks || {})[userName] || []).includes(matchId);
+}
+
+// True if this match is the Match of the Day (deterministic per calendar date).
+function isMatchOfTheDay(m) {
+  return motdForDate(m.date) === m.id;
+}
+
+// Pick one Match of the Day for a given date deterministically.
+// Same string-input -> same matchId, so all browsers agree without sync.
+function motdForDate(dateStr) {
+  const ms = MATCHES.filter(x => x.date === dateStr && x.stage !== "FINAL");
+  if (ms.length === 0) return null;
+  if (ms.length === 1) return ms[0].id;
+  // simple deterministic hash over the date
+  let h = 0;
+  for (let i = 0; i < dateStr.length; i++) h = ((h << 5) - h + dateStr.charCodeAt(i)) | 0;
+  return ms[Math.abs(h) % ms.length].id;
+}
+
+/* =====================================================
+   ACHIEVEMENTS — small medals shown next to the player name on the leaderboard.
+   Each medal awards +5 pts the first time it is unlocked. Recomputed on every render
+   from picks/results so there is no extra state to sync.
+   ===================================================== */
+const ACHIEVEMENT_DEFS = [
+  { id: "hot",      ico: "\ud83d\udd25", title: "Hot streak",   desc: "Scored points in 3 consecutive settled matches.", pts: 5 },
+  { id: "sniper",   ico: "\ud83c\udfaf", title: "Sniper",       desc: "Hit the exact score in 3 different matches.",     pts: 5 },
+  { id: "underdog", ico: "\ud83c\udf19", title: "Underdog",     desc: "Predicted a contrarian outcome and nailed it (you were the only one).", pts: 5 },
+  { id: "joker",    ico: "\ud83c\udccf", title: "Joker",        desc: "Exact-hit on a goal-fest (5+ total goals).",       pts: 5 },
+  { id: "ducky",    ico: "\ud83e\udd86", title: "Ugly duckling", desc: "0 points in 5 consecutive settled matches \u2014 it can only get better.", pts: 0 }
+];
+
+function calcAchievements(userName) {
+  const preds = state.predictions[userName] || {};
+  // Walk matches in chronological order (date + id).
+  const ordered = MATCHES.slice().sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+  const userPP = (state.powerPicks || {})[userName] || [];
+  const unlocked = new Map();
+
+  let streak = 0;       // points-scoring streak
+  let droughtStreak = 0; // zero-point streak
+  let exactCount = 0;
+  for (const m of ordered) {
+    const pred = preds[m.id];
+    const result = state.results[m.id];
+    if (!result || result.h == null || result.a == null) continue;
+    if (!pred || pred.h == null || pred.a == null) {
+      streak = 0;
+      droughtStreak++;
+      if (droughtStreak >= 5 && !unlocked.has("ducky")) unlocked.set("ducky", ACHIEVEMENT_DEFS.find(a => a.id === "ducky"));
+      continue;
+    }
+    const isKnockout = m.stage !== "group";
+    const opts = { powerPick: userPP.includes(m.id), motd: isMatchOfTheDay(m) };
+    const { pts, kind } = calcMatchPoints(pred, result, isKnockout, opts);
+
+    if (pts > 0) {
+      streak++;
+      droughtStreak = 0;
+      if (streak >= 3 && !unlocked.has("hot")) unlocked.set("hot", ACHIEVEMENT_DEFS.find(a => a.id === "hot"));
+    } else {
+      streak = 0;
+      droughtStreak++;
+      if (droughtStreak >= 5 && !unlocked.has("ducky")) unlocked.set("ducky", ACHIEVEMENT_DEFS.find(a => a.id === "ducky"));
+    }
+
+    if (kind === "exact") {
+      exactCount++;
+      if (exactCount >= 3 && !unlocked.has("sniper")) unlocked.set("sniper", ACHIEVEMENT_DEFS.find(a => a.id === "sniper"));
+      // Joker: exact hit on a goal-fest (5+ total goals).
+      if ((result.h + result.a) >= 5 && !unlocked.has("joker")) unlocked.set("joker", ACHIEVEMENT_DEFS.find(a => a.id === "joker"));
+      // Underdog: exact hit AND no other player picked the same scoreline.
+      const others = state.users.filter(u => u.name !== userName);
+      const alone = others.every(u => {
+        const p = (state.predictions[u.name] || {})[m.id];
+        return !(p && p.h === pred.h && p.a === pred.a);
+      });
+      if (alone && others.length > 0 && !unlocked.has("underdog")) {
+        unlocked.set("underdog", ACHIEVEMENT_DEFS.find(a => a.id === "underdog"));
+      }
+    }
+  }
+  return Array.from(unlocked.values());
+}
+
+/* =====================================================
+   WISDOM OF THE CROWD — average h/a across all picks for a match.
+   Returns null when there are no picks.
+   ===================================================== */
+function crowdAverage(matchId) {
+  let sumH = 0, sumA = 0, n = 0;
+  for (const u of state.users) {
+    const p = (state.predictions[u.name] || {})[matchId];
+    if (!p || p.h == null || p.a == null) continue;
+    sumH += p.h; sumA += p.a; n++;
+  }
+  if (n === 0) return null;
+  return { h: sumH / n, a: sumA / n, count: n };
+}
+
+/* =====================================================
+   DAILY ROAST — weirdest pick from today's locked matches.
+   Picks the entry with the largest deviation from the crowd average,
+   then ties broken by goal sum. Returns { user, match, pred } or null.
+   ===================================================== */
+function dailyRoast() {
+  const today = new Date().toISOString().slice(0, 10);
+  const candidates = [];
+  for (const m of MATCHES) {
+    if (m.date !== today) continue;
+    if (!isLocked(m)) continue; // only after kick-off
+    const avg = crowdAverage(m.id);
+    if (!avg || avg.count < 2) continue;
+    for (const u of state.users) {
+      const p = (state.predictions[u.name] || {})[m.id];
+      if (!p || p.h == null || p.a == null) continue;
+      const distance = Math.abs(p.h - avg.h) + Math.abs(p.a - avg.a);
+      const goals = p.h + p.a;
+      candidates.push({ user: u.name, match: m, pred: p, distance, goals });
+    }
+  }
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => (b.distance - a.distance) || (b.goals - a.goals));
+  return candidates[0];
 }
 
 function calcUserStats(userName) {
@@ -1838,16 +2227,20 @@ function calcUserStats(userName) {
     user: userName,
     matchesPredicted: 0, matchesScored: 0,
     exact: 0, diff: 0, outcome: 0, zero: 0,
-    matchPoints: 0, bonusPoints: 0, total: 0
+    matchPoints: 0, bonusPoints: 0, total: 0,
+    powerPicksUsed: 0
   };
   const preds = state.predictions[userName] || {};
+  const userPP = (state.powerPicks || {})[userName] || [];
+  stats.powerPicksUsed = userPP.length;
   for (const m of MATCHES) {
     const pred = preds[m.id];
     if (pred && pred.h != null && pred.a != null) stats.matchesPredicted++;
     const result = state.results[m.id];
     if (result && result.h != null && result.a != null && pred) {
       const isKnockout = m.stage !== "group";
-      const { pts, kind } = calcMatchPoints(pred, result, isKnockout);
+      const opts = { powerPick: userPP.includes(m.id), motd: isMatchOfTheDay(m) };
+      const { pts, kind } = calcMatchPoints(pred, result, isKnockout, opts);
       stats.matchesScored++;
       if (kind === "exact") stats.exact++;
       else if (kind === "diff") stats.diff++;
@@ -1862,7 +2255,11 @@ function calcUserStats(userName) {
       stats.bonusPoints += Number(state.scoring[b.key]) || 0;
     }
   }
-  stats.total = stats.matchPoints + stats.bonusPoints;
+  // Achievements (see calcAchievements). Each unique medal awards +5 pts.
+  const achv = calcAchievements(userName);
+  stats.achievements = achv;
+  stats.achievementPoints = achv.reduce((n, a) => n + (a.pts || 0), 0);
+  stats.total = stats.matchPoints + stats.bonusPoints + stats.achievementPoints;
   return stats;
 }
 
@@ -1917,6 +2314,9 @@ function render() {
   renderSyncIndicator();
   renderConnectBanner();
   updateTabsVisibility();
+  // Fire confetti for any new exact hits picked up via JSONBin pull.
+  // Wrapped in try so a render still completes if confetti fails for any reason.
+  try { checkExactHits(); } catch (e) { console.warn("checkExactHits failed", e); }
 }
 
 function renderHeader() {
@@ -1951,19 +2351,22 @@ function renderHero() {
     $("#heroPlayedSub").textContent = "of the tournament";
     $("#heroRank").textContent = "—";
     $("#heroRankSub").textContent = "";
+    if ($("#heroJokers")) { $("#heroJokers").textContent = "—"; $("#heroJokersSub").textContent = "pick a profile"; }
+    if ($("#dailyRoastCard")) $("#dailyRoastCard").hidden = true;
     return;
   }
   const stats = calcUserStats(state.currentUser);
   const board = calcLeaderboard();
   const rank = board.findIndex(r => r.user === state.currentUser) + 1;
   $("#heroPoints").textContent = stats.total;
-  $("#heroPointsSub").textContent = stats.bonusPoints > 0
-    ? `matches: ${stats.matchPoints} · bonuses: ${stats.bonusPoints}`
-    : `over ${stats.matchesScored} settled matches`;
+  const parts = [`matches: ${stats.matchPoints}`];
+  if (stats.bonusPoints > 0) parts.push(`bonuses: ${stats.bonusPoints}`);
+  if (stats.achievementPoints > 0) parts.push(`medals: ${stats.achievementPoints}`);
+  $("#heroPointsSub").textContent = stats.matchesScored > 0 ? parts.join(" \u00b7 ") : "no settled matches yet";
   $("#heroHits").textContent = stats.matchesScored ? `${stats.exact}/${stats.matchesScored}` : "—";
   $("#heroHitsSub").textContent = stats.matchesScored
     ? `${stats.exact}× exact · ${stats.diff}× diff · ${stats.outcome}× 1X2`
-    : "po pierwszych wynikach";
+    : "after the first kick-offs";
   const played = Object.keys(state.results).filter(k => {
     const r = state.results[k]; return r && r.h != null && r.a != null;
   }).length;
@@ -1971,6 +2374,39 @@ function renderHero() {
   $("#heroPlayedSub").textContent = played === 0 ? "tournament not started yet" : "matches played";
   $("#heroRank").textContent = rank ? `#${rank}` : "—";
   $("#heroRankSub").textContent = state.users.length > 1 ? `of ${state.users.length} players` : "playing solo";
+
+  // Jokers left
+  const jokersUsed = ((state.powerPicks || {})[state.currentUser] || []).length;
+  const jokersLeft = Math.max(0, POWER_PICK_BUDGET - jokersUsed);
+  if ($("#heroJokers")) {
+    $("#heroJokers").textContent = `${jokersLeft}/${POWER_PICK_BUDGET}`;
+    $("#heroJokersSub").textContent = jokersLeft === 0 ? "all jokers spent" : (jokersUsed === 0 ? "tap a match to spend" : `${jokersUsed} spent`);
+  }
+
+  // Daily roast: weirdest pick of the day, after kick-off
+  const card = $("#dailyRoastCard");
+  if (card) {
+    const r = dailyRoast();
+    if (!r) {
+      card.hidden = true;
+    } else {
+      const homeName = getTeamName(r.match, "home");
+      const awayName = getTeamName(r.match, "away");
+      const isMe = r.user === state.currentUser;
+      card.hidden = false;
+      card.innerHTML = `
+        <div class="dr-ico">\ud83c\udf2a\ufe0f</div>
+        <div class="dr-body">
+          <div class="dr-title">Pick of the day \u2014 most off-script</div>
+          <div class="dr-text">
+            <b>${escapeHtml(r.user)}${isMe ? " (you!)" : ""}</b> typed
+            <b>${r.pred.h} : ${r.pred.a}</b> for
+            <b>${escapeHtml(homeName)} \u2013 ${escapeHtml(awayName)}</b>.
+            We salute the bravery. \ud83c\udf86
+          </div>
+        </div>`;
+    }
+  }
 }
 
 function renderMatches() {
@@ -2046,14 +2482,17 @@ function renderMatchHTML(m) {
   const adminMode = state.adminMode;
   const isKnockout = m.stage !== "group";
   const hasPick = pred.h != null && pred.a != null;
+  const motd = isMatchOfTheDay(m);
+  const myPP = me ? hasPowerPick(me, m.id) : false;
 
-  // Points label after match has result
+  // Points label after match has result (includes power-pick / motd multipliers)
   let pointsLabel = "";
   if (hasResult && hasPick) {
-    const { pts, kind } = calcMatchPoints(pred, result, isKnockout);
+    const { pts, kind } = calcMatchPoints(pred, result, isKnockout, { powerPick: myPP, motd });
     const cls = kind === "exact" ? "pts-exact" : kind === "diff" ? "pts-diff" : kind === "outcome" ? "pts-outcome" : "pts-zero";
     const lbl = kind === "exact" ? "EXACT" : kind === "diff" ? "DIFF" : kind === "outcome" ? "1X2" : "MISS";
-    pointsLabel = `<span class="match-points ${cls}">${pts} pts \u00b7 ${lbl}</span>`;
+    const multBadge = (myPP ? " \u00b7 \ud83c\udccf\u00d72" : "") + (motd ? " \u00b7 \ud83c\udfaf\u00d72" : "");
+    pointsLabel = `<span class="match-points ${cls}">${pts} pts \u00b7 ${lbl}${multBadge}</span>`;
   } else if (hasResult) {
     pointsLabel = `<span class="match-points pts-zero">no pick</span>`;
   }
@@ -2076,8 +2515,10 @@ function renderMatchHTML(m) {
   const homeNameClass = `team-name${editClass}${homePh ? " placeholder" : ""}`;
   const awayNameClass = `team-name${editClass}${awayPh ? " placeholder" : ""}`;
 
-  // Top bar: STAGE/GROUP \u00b7 TIME \u00b7 STADIUM, CITY
+  // Top bar pills: STAGE/GROUP \u00b7 TIME \u00b7 STADIUM, CITY (+ MOTD + Power Pick badges)
   const stagePill = m.group ? `<span class="stage-pill">Group ${m.group}</span>` : `<span class="stage-pill">${escapeHtml(stageShort)}</span>`;
+  const motdPill = motd ? `<span class="motd-pill" title="Match of the Day \u2014 exact/diff/outcome points are doubled">\ud83c\udfaf MOTD \u00d72</span>` : "";
+  const myPpPill = myPP ? `<span class="pp-pill" title="You used a Power Pick joker here \u2014 your points are doubled">\ud83c\udccf POWER PICK</span>` : "";
   const kickoffTime = m.time && m.time !== "?" ? `<span>\u23f0 ${escapeHtml(m.time)} CEST</span>` : "";
   const stadiumLine = m.stadium ? `<span class="topbar-stadium">\ud83d\udccd <span class="stadium-name">${escapeHtml(m.stadium)}</span>${m.city ? ", " + escapeHtml(m.city) : ""}</span>` : "";
 
@@ -2085,38 +2526,92 @@ function renderMatchHTML(m) {
   const inputsDisabled = (locked && !adminMode);
   const pickPrefix = (!adminMode && hasPick && !inputsDisabled) ? `<span class="your-pick-tag">your pick</span>` : "";
 
-  // Result band content
+  // Result band content (with wisdom-of-the-crowd avg once the match is locked)
   const showResultBand = !adminMode && (hasResult || (locked && !hasResult));
   const resultBandHTML = (() => {
     if (!showResultBand) return "";
     if (locked && !hasResult) {
-      return `<div class="match-locked-band"><span class="lock-pill">\u23f8 locked \u2014 awaiting official result</span></div>`;
+      const avg = crowdAverage(m.id);
+      const wisdom = avg ? `<span class="crowd-pill" title="Average of ${avg.count} player picks">\ud83d\udc65 team avg ${avg.h.toFixed(1)} : ${avg.a.toFixed(1)}</span>` : "";
+      return `<div class="match-locked-band"><span class="lock-pill">\u23f8 locked \u2014 awaiting official result</span>${wisdom}</div>`;
     }
-    // hasResult — centered final result + points (your pick already shown above with "YOUR PICK" tag)
+    // hasResult \u2014 centered final result + points (your pick already shown above with "YOUR PICK" tag)
     return `<div class="match-result-band">
       <div class="actual-result"><span class="label">Final result</span>${result.h} : ${result.a}</div>
       ${pointsLabel}
     </div>`;
   })();
 
+  // Power Pick button: usable for the current user, before kick-off, when they have a pick,
+  // when admin isn't impersonating, and only if they still have budget (or already used it here).
+  let powerPickBtn = "";
+  if (me && !adminMode && !locked && !isPlaceholder(m, "home") && !isPlaceholder(m, "away")) {
+    const used = ((state.powerPicks || {})[me] || []).length;
+    const left = POWER_PICK_BUDGET - used;
+    if (myPP) {
+      powerPickBtn = `<button class="pp-btn pp-active" data-action="pp-off" title="Click to remove this Power Pick joker">\ud83c\udccf Power Pick used</button>`;
+    } else if (left > 0 && hasPick) {
+      powerPickBtn = `<button class="pp-btn" data-action="pp-on" title="Spend a Power Pick joker (${left} left) \u2014 doubles your points for this match">\ud83c\udccf Power Pick (\u00d72)</button>`;
+    } else if (left > 0 && !hasPick) {
+      powerPickBtn = `<button class="pp-btn" disabled title="Enter your score first">\ud83c\udccf Power Pick</button>`;
+    }
+  }
+
+  // Reactions bar
+  const matchReactions = (state.reactions || {})[m.id] || {};
+  const reactionBtns = REACTION_EMOJIS.map(e => {
+    const users = matchReactions[e] || [];
+    const mine = me && users.includes(me);
+    const count = users.length;
+    return `<button class="reax ${mine ? "mine" : ""}" data-emoji="${e}" title="${users.map(escapeHtml).join(", ") || "react"}">${e}${count > 0 ? `<span class="reax-count">${count}</span>` : ""}</button>`;
+  }).join("");
+
+  // Trash talk (visible always, but only editable before lock; others' show only after lock)
+  const myTalk = me ? (((state.trashTalk || {})[me] || {})[m.id] || "") : "";
+  const otherTalk = [];
+  for (const u of state.users) {
+    if (u.name === me) continue;
+    if (!locked && !state.adminMode) continue; // only after lock
+    const t = ((state.trashTalk || {})[u.name] || {})[m.id];
+    if (t) otherTalk.push({ user: u.name, text: t });
+  }
+  const trashTalkRow = me ? `
+    <div class="trash-talk">
+      <input type="text" class="trash-talk-input" data-action="tt" maxlength="80" placeholder="Trash talk (visible after kick-off, max 80 chars)" value="${escapeHtml(myTalk)}" ${locked && !state.adminMode ? "disabled" : ""}>
+    </div>` : "";
+  const trashTalkBubbles = otherTalk.length ? `
+    <div class="trash-talk-bubbles">
+      ${otherTalk.map(t => `<div class="ttb"><span class="ttb-user" style="background:${avatarColor(t.user)};">${initials(t.user)}</span><span class="ttb-text">${escapeHtml(t.text)}</span></div>`).join("")}
+    </div>` : "";
+
+  const interactionBar = (me || reactionBtns) ? `
+    <div class="match-interaction">
+      <div class="reax-row">${reactionBtns}</div>
+      ${powerPickBtn}
+    </div>` : "";
+
   const isExpanded = state.expandedMatches && state.expandedMatches.includes(m.id);
 
-  // Count players who actually have a pick for this match — only those will appear in the expand panel.
+  // Count players who actually have a pick for this match \u2014 only those will appear in the expand panel.
   const pickedCount = state.users.reduce((n, u) => {
     const p = (state.predictions[u.name] || {})[m.id];
     return n + (p && p.h != null && p.a != null ? 1 : 0);
   }, 0);
 
   // Always show the picks toggle when there's more than one player so everyone can see who voted what.
-  // Points inside the expand panel only render once a final result exists.
   const expandFooter = (state.users.length > 1)
     ? `<div class="match-actions">${isExpanded ? "\u25b4 hide picks" : "\u25be show all picks (" + pickedCount + ")"}</div>`
     : "";
 
+  const motdClass = motd ? " motd" : "";
+  const ppClass = myPP ? " has-pp" : "";
+
   return `
-    <div class="match ${locked ? "locked" : ""} ${hasResult ? "has-result" : ""} ${isExpanded ? "expanded" : ""}" data-id="${m.id}">
+    <div class="match ${locked ? "locked" : ""} ${hasResult ? "has-result" : ""} ${isExpanded ? "expanded" : ""}${motdClass}${ppClass}" data-id="${m.id}">
       <div class="match-topbar">
         ${stagePill}
+        ${motdPill}
+        ${myPpPill}
         ${kickoffTime}
         <span class="topbar-spacer"></span>
         ${stadiumLine}
@@ -2138,6 +2633,9 @@ function renderMatchHTML(m) {
         </div>
       </div>
       ${resultBandHTML}
+      ${interactionBar}
+      ${trashTalkRow}
+      ${trashTalkBubbles}
       <div class="match-expand"></div>
       ${expandFooter}
     </div>
@@ -2197,6 +2695,83 @@ function rebindMatch(matchId) {
   teamEdits.forEach(t => t.addEventListener("click", e => onEditTeam(e, matchId)));
   const expandBtn = node.querySelector(".match-actions");
   if (expandBtn) expandBtn.addEventListener("click", () => toggleExpand(node, matchId));
+  // Power pick toggle
+  const pp = node.querySelector(".pp-btn[data-action]");
+  if (pp) pp.addEventListener("click", () => togglePowerPick(matchId));
+  // Reactions
+  node.querySelectorAll(".reax").forEach(btn => {
+    btn.addEventListener("click", () => toggleReaction(matchId, btn.dataset.emoji));
+  });
+  // Trash talk
+  const tt = node.querySelector("[data-action='tt']");
+  if (tt) {
+    let ttTimer = null;
+    tt.addEventListener("input", e => {
+      clearTimeout(ttTimer);
+      ttTimer = setTimeout(() => setTrashTalk(matchId, e.target.value), 500);
+    });
+    tt.addEventListener("blur", e => setTrashTalk(matchId, e.target.value));
+  }
+}
+
+function togglePowerPick(matchId) {
+  const me = state.currentUser;
+  if (!me) { toast("Pick a profile first", "error"); return; }
+  const m = MATCHES.find(x => x.id === matchId);
+  if (!m || isLocked(m)) { toast("Match already kicked off", "error"); return; }
+  state.powerPicks = state.powerPicks || {};
+  state.powerPicks[me] = state.powerPicks[me] || [];
+  const arr = state.powerPicks[me];
+  const idx = arr.indexOf(matchId);
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+    toast("Power Pick removed", "success");
+  } else {
+    if (arr.length >= POWER_PICK_BUDGET) { toast(`No jokers left (${POWER_PICK_BUDGET} per tournament)`, "error"); return; }
+    const pred = (state.predictions[me] || {})[matchId];
+    if (!pred || pred.h == null || pred.a == null) { toast("Enter your score first", "error"); return; }
+    arr.push(matchId);
+    toast(`Power Pick used \u2014 ${POWER_PICK_BUDGET - arr.length} left`, "success");
+  }
+  saveState();
+  renderMatches();
+  renderHero();
+  renderLeaderboard();
+}
+
+function toggleReaction(matchId, emoji) {
+  const me = state.currentUser;
+  if (!me) { toast("Pick a profile first", "error"); return; }
+  state.reactions = state.reactions || {};
+  state.reactions[matchId] = state.reactions[matchId] || {};
+  state.reactions[matchId][emoji] = state.reactions[matchId][emoji] || [];
+  const arr = state.reactions[matchId][emoji];
+  const i = arr.indexOf(me);
+  if (i >= 0) arr.splice(i, 1); else arr.push(me);
+  if (arr.length === 0) delete state.reactions[matchId][emoji];
+  if (Object.keys(state.reactions[matchId]).length === 0) delete state.reactions[matchId];
+  saveState();
+  // Re-render just this match's interaction bar
+  const node = document.querySelector(`.match[data-id="${matchId}"]`);
+  if (node) {
+    node.outerHTML = renderMatchHTML(MATCHES.find(x => x.id === matchId));
+    rebindMatch(matchId);
+  }
+}
+
+function setTrashTalk(matchId, text) {
+  const me = state.currentUser;
+  if (!me) return;
+  const m = MATCHES.find(x => x.id === matchId);
+  if (!m) return;
+  if (isLocked(m) && !state.adminMode) return; // can't change after lock
+  state.trashTalk = state.trashTalk || {};
+  state.trashTalk[me] = state.trashTalk[me] || {};
+  const clean = (text || "").trim().slice(0, 80);
+  if (clean) state.trashTalk[me][matchId] = clean;
+  else delete state.trashTalk[me][matchId];
+  if (Object.keys(state.trashTalk[me]).length === 0) delete state.trashTalk[me];
+  saveState();
 }
 
 function onEditTeam(e, matchId) {
@@ -2515,32 +3090,65 @@ function renderLeaderboard() {
   const body = $("#leaderboardBody");
   const board = calcLeaderboard();
   if (board.length === 0) {
-    body.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="ico">👥</div><div class="ttl">No players</div><div>Add players in the Settings tab.</div></div></td></tr>`;
-    return;
+    body.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="ico">👥</div><div class="ttl">No players</div><div>Add players in the Settings tab.</div></div></td></tr>`;
+  } else {
+    body.innerHTML = board.map((r, i) => {
+      const rank = i + 1;
+      const rankCls = rank === 1 ? "rank-1" : rank === 2 ? "rank-2" : rank === 3 ? "rank-3" : "";
+      const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "";
+      const isMe = r.user === state.currentUser;
+      const badges = (r.achievements || []).map(a => `<span class="achv-badge" title="${escapeHtml(a.title)} \u2014 ${escapeHtml(a.desc)}">${a.ico}</span>`).join("");
+      return `
+        <tr class="${isMe ? "current-user" : ""}">
+          <td class="num rank-cell ${rankCls}">${medal || rank}</td>
+          <td>
+            <div class="user-cell">
+              <span class="avatar" style="background:${avatarColor(r.user)};">${initials(r.user)}</span>
+              <span style="font-weight:600;">${escapeHtml(r.user)}${isMe ? " <span style='color:var(--text-muted); font-weight:400; font-size:12px;'>(ja)</span>" : ""}</span>
+              ${badges ? `<span class="achv-row">${badges}</span>` : ""}
+            </div>
+          </td>
+          <td class="num">${r.matchesScored}</td>
+          <td class="num" style="color: var(--success); font-weight:700;">${r.exact}</td>
+          <td class="num" style="color: var(--info); font-weight:600;">${r.diff}</td>
+          <td class="num" style="color: var(--warning); font-weight:600;">${r.outcome}</td>
+          <td class="num">${r.bonusPoints}</td>
+          <td class="num">${r.achievementPoints || 0}</td>
+          <td class="num pts-total">${r.total}</td>
+        </tr>
+      `;
+    }).join("");
   }
-  body.innerHTML = board.map((r, i) => {
-    const rank = i + 1;
-    const rankCls = rank === 1 ? "rank-1" : rank === 2 ? "rank-2" : rank === 3 ? "rank-3" : "";
-    const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "";
-    const isMe = r.user === state.currentUser;
-    return `
-      <tr class="${isMe ? "current-user" : ""}">
-        <td class="num rank-cell ${rankCls}">${medal || rank}</td>
-        <td>
-          <div class="user-cell">
-            <span class="avatar" style="background:${avatarColor(r.user)};">${initials(r.user)}</span>
-            <span style="font-weight:600;">${escapeHtml(r.user)}${isMe ? " <span style='color:var(--text-muted); font-weight:400; font-size:12px;'>(ja)</span>" : ""}</span>
-          </div>
-        </td>
-        <td class="num">${r.matchesScored}</td>
-        <td class="num" style="color: var(--success); font-weight:700;">${r.exact}</td>
-        <td class="num" style="color: var(--info); font-weight:600;">${r.diff}</td>
-        <td class="num" style="color: var(--warning); font-weight:600;">${r.outcome}</td>
-        <td class="num">${r.bonusPoints}</td>
-        <td class="num pts-total">${r.total}</td>
-      </tr>
-    `;
-  }).join("");
+
+  // Reverse mini-leaderboard: bottom 5 players who have at least played one match
+  const rev = $("#reverseLeaderboard");
+  if (rev) {
+    const played = board.filter(r => r.matchesScored > 0);
+    const bottom = played.slice().reverse().slice(0, 5);
+    if (bottom.length === 0) {
+      rev.innerHTML = `<div class="subtitle" style="margin:8px 0 0;">Nothing here yet \u2014 wait for the first results.</div>`;
+    } else {
+      rev.innerHTML = `<table class="reverse-table"><tbody>${bottom.map((r, i) => `
+        <tr class="${r.user === state.currentUser ? "current-user" : ""}">
+          <td class="num">${i === 0 ? "\ud83e\udd86" : i + 1}</td>
+          <td><span class="avatar avatar-sm" style="background:${avatarColor(r.user)};">${initials(r.user)}</span> ${escapeHtml(r.user)}</td>
+          <td class="num">${r.total}</td>
+        </tr>`).join("")}</tbody></table>`;
+    }
+  }
+
+  // Achievements legend
+  const leg = $("#achievementsLegend");
+  if (leg) {
+    leg.innerHTML = `<div class="achv-legend">${ACHIEVEMENT_DEFS.map(a => `
+      <div class="achv-item" title="${escapeHtml(a.desc)}">
+        <span class="achv-ico">${a.ico}</span>
+        <div class="achv-meta">
+          <div class="achv-title">${escapeHtml(a.title)}${a.pts > 0 ? ` <span class="achv-pts">+${a.pts} pts</span>` : ""}</div>
+          <div class="achv-desc">${escapeHtml(a.desc)}</div>
+        </div>
+      </div>`).join("")}</div>`;
+  }
 }
 
 /* ----- STATS ----- */
@@ -3144,6 +3752,41 @@ function mergeFromShared(incoming) {
   for (const k of Object.keys(newBonus)) if (!aliveNames.has(k)) delete newBonus[k];
   state.bonus = newBonus;
 
+  // Power picks: per-user list of matchIds; incoming wins for everyone except me
+  const newPP = { ...(incoming.powerPicks || {}) };
+  if (myName && state.powerPicks && state.powerPicks[myName]) newPP[myName] = state.powerPicks[myName];
+  for (const k of Object.keys(newPP)) if (!aliveNames.has(k)) delete newPP[k];
+  state.powerPicks = newPP;
+
+  // Trash talk: per-user per-match; incoming wins for everyone except me
+  const newTT = { ...(incoming.trashTalk || {}) };
+  if (myName && state.trashTalk && state.trashTalk[myName]) newTT[myName] = state.trashTalk[myName];
+  for (const k of Object.keys(newTT)) if (!aliveNames.has(k)) delete newTT[k];
+  state.trashTalk = newTT;
+
+  // Reactions: union per match per emoji. Each user appears at most once per (matchId, emoji).
+  // Local additions/removals for the current user are kept; everyone else's are taken from incoming.
+  const newReactions = {};
+  const matchIds = new Set([...Object.keys(state.reactions || {}), ...Object.keys(incoming.reactions || {})]);
+  for (const mid of matchIds) {
+    const localMatch = (state.reactions || {})[mid] || {};
+    const incMatch = (incoming.reactions || {})[mid] || {};
+    const emojis = new Set([...Object.keys(localMatch), ...Object.keys(incMatch)]);
+    newReactions[mid] = {};
+    for (const e of emojis) {
+      const set = new Set();
+      // Everyone except me: take from incoming
+      for (const u of (incMatch[e] || [])) {
+        if (u !== myName && aliveNames.has(u)) set.add(u);
+      }
+      // Me: keep my own local choice (so a fresh toggle isn't undone by a pre-toggle pull)
+      if (myName && (localMatch[e] || []).includes(myName)) set.add(myName);
+      if (set.size > 0) newReactions[mid][e] = Array.from(set);
+    }
+    if (Object.keys(newReactions[mid]).length === 0) delete newReactions[mid];
+  }
+  state.reactions = newReactions;
+
   // Results, overrides, scoring, bonus results: incoming wins
   if (incoming.results) state.results = { ...incoming.results };
   if (incoming.bonusResults) state.bonusResults = { ...incoming.bonusResults };
@@ -3188,6 +3831,39 @@ function buildSharedSnapshot(existing) {
     else delete bonus[myName];
   }
 
+  // Power picks: keep team-wide list from file, overwrite my entry locally
+  const powerPicks = { ...(base?.powerPicks || {}) };
+  if (myName) {
+    if (state.powerPicks[myName] && state.powerPicks[myName].length) powerPicks[myName] = state.powerPicks[myName];
+    else delete powerPicks[myName];
+  }
+
+  // Trash talk: keep team-wide, overwrite my entry
+  const trashTalk = { ...(base?.trashTalk || {}) };
+  if (myName) {
+    if (state.trashTalk[myName] && Object.keys(state.trashTalk[myName]).length) trashTalk[myName] = state.trashTalk[myName];
+    else delete trashTalk[myName];
+  }
+
+  // Reactions: for each (matchId, emoji) union all users; my own membership reflects local state.
+  const reactions = {};
+  const allMatchIds = new Set([...Object.keys(state.reactions || {}), ...Object.keys((base?.reactions) || {})]);
+  for (const mid of allMatchIds) {
+    const localMatch = (state.reactions || {})[mid] || {};
+    const baseMatch = (base?.reactions || {})[mid] || {};
+    const emojis = new Set([...Object.keys(localMatch), ...Object.keys(baseMatch)]);
+    reactions[mid] = {};
+    for (const e of emojis) {
+      const set = new Set();
+      // Everyone except me: from base
+      for (const u of (baseMatch[e] || [])) if (u !== myName) set.add(u);
+      // Me: from local
+      if (myName && (localMatch[e] || []).includes(myName)) set.add(myName);
+      if (set.size > 0) reactions[mid][e] = Array.from(set);
+    }
+    if (Object.keys(reactions[mid]).length === 0) delete reactions[mid];
+  }
+
   // Users: union of file + local, then drop dead ones
   const users = [...(base?.users || [])];
   for (const u of state.users) {
@@ -3197,6 +3873,15 @@ function buildSharedSnapshot(existing) {
   const aliveNames = new Set(filteredUsers.map(u => u.name));
   for (const k of Object.keys(predictions)) if (!aliveNames.has(k)) delete predictions[k];
   for (const k of Object.keys(bonus)) if (!aliveNames.has(k)) delete bonus[k];
+  for (const k of Object.keys(powerPicks)) if (!aliveNames.has(k)) delete powerPicks[k];
+  for (const k of Object.keys(trashTalk)) if (!aliveNames.has(k)) delete trashTalk[k];
+  for (const mid of Object.keys(reactions)) {
+    for (const e of Object.keys(reactions[mid])) {
+      reactions[mid][e] = reactions[mid][e].filter(u => aliveNames.has(u));
+      if (reactions[mid][e].length === 0) delete reactions[mid][e];
+    }
+    if (Object.keys(reactions[mid]).length === 0) delete reactions[mid];
+  }
 
   // Results / overrides / scoring: if I'm admin, my local copy is authoritative; else keep file's.
   const results = state.adminMode ? state.results : (base?.results || state.results);
@@ -3220,7 +3905,10 @@ function buildSharedSnapshot(existing) {
     matchOverrides,
     scoring,
     lastLiveSync,
-    liveAutoSync
+    liveAutoSync,
+    reactions,
+    trashTalk,
+    powerPicks
   };
 }
 
@@ -3365,7 +4053,10 @@ function saveStateLocalOnly() {
       matchOverrides: state.matchOverrides,
       scoring: state.scoring,
       lastLiveSync: state.lastLiveSync,
-      liveAutoSync: state.liveAutoSync
+      liveAutoSync: state.liveAutoSync,
+      reactions: state.reactions,
+      trashTalk: state.trashTalk,
+      powerPicks: state.powerPicks
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
   } catch (e) { console.warn("saveStateLocalOnly failed", e); }
