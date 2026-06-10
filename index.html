@@ -2051,7 +2051,9 @@ function renderMatchHTML(m) {
 
   const isExpanded = state.expandedMatches && state.expandedMatches.includes(m.id);
 
-  const expandFooter = (state.users.length > 1 && (hasResult || (locked && !adminMode)))
+  // Always show the picks toggle when there's more than one player so everyone can see who voted what.
+  // Points inside the expand panel only render once a final result exists.
+  const expandFooter = (state.users.length > 1)
     ? `<div class="match-actions">${isExpanded ? "\u25b4 hide picks" : "\u25be show all picks (" + state.users.length + ")"}</div>`
     : "";
 
