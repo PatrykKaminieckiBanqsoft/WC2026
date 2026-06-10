@@ -1635,6 +1635,17 @@ function loadState() {
   state.bonusResults = state.bonusResults || {};
   state.users = state.users || [];
   state.deletedUsers = state.deletedUsers || [];
+  // Normalise tombstones: legacy strings -> {name, at:0}; dedupe by lowercase name keeping latest timestamp
+  const _tomb = new Map();
+  for (const t of state.deletedUsers) {
+    if (!t) continue;
+    const obj = typeof t === "string" ? { name: t, at: 0 } : { name: t.name, at: t.at || 0 };
+    if (!obj.name) continue;
+    const k = obj.name.toLowerCase();
+    const ex = _tomb.get(k);
+    if (!ex || obj.at > ex.at) _tomb.set(k, obj);
+  }
+  state.deletedUsers = Array.from(_tomb.values());
   state.adminMode = false; // never persisted
   state.expandedMatches = state.expandedMatches || [];
 
@@ -2683,10 +2694,16 @@ function renderSyncStatusBox() {
       <div style="display:flex; gap: 8px; flex-wrap: wrap;">
         <button class="btn btn-sm" id="btnSyncPullSet">⬇️ Pull latest</button>
         <button class="btn btn-sm" id="btnSyncPushSet">⬆️ Push now</button>
+        <button class="btn btn-sm" id="btnResetCacheSet" title="Clear this browser's local cache and reload from JSONBin (no team data is lost)">🧹 Reset local cache</button>
       </div>
     `;
     $("#btnSyncPullSet").onclick = async () => { await pullShared(); toast("Pulled latest", "success"); };
     $("#btnSyncPushSet").onclick = async () => { await pushShared(true); toast("Pushed", "success"); };
+    $("#btnResetCacheSet").onclick = () => {
+      if (!confirm("Clear local cache and reload?\n\nThis only affects this browser. Team data on JSONBin is untouched.")) return;
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      location.reload();
+    };
   } else if (status === "error") {
     box.innerHTML = `
       <div class="notice warn" style="margin:0;"><span>⚠️</span><div>Sync error: <code>${escapeHtml(state.syncDetail || "?")}</code><br>Check the BIN ID and X-Master-Key in the script header.</div></div>
