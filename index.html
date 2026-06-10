@@ -246,6 +246,8 @@
   .scoring-legend .sl-pill.exact { background: var(--success); }
   .scoring-legend .sl-pill.diff { background: var(--info); color: white; }
   .scoring-legend .sl-pill.outcome { background: var(--warning); }
+  .scoring-legend .sl-pill.bonus { background: #6b7280; color: white; }
+  .scoring-legend .sl-pill.mult { background: linear-gradient(135deg, #fbbf24, #8b5cf6); color: white; }
 
   /* ---------- Filters ---------- */
   .filters {
@@ -1307,8 +1309,8 @@
           <div><span class="sl-pill exact"><b id="legendExact">5</b></span> exact score</div>
           <div><span class="sl-pill diff"><b id="legendDiff">3</b></span> goal diff</div>
           <div><span class="sl-pill outcome"><b id="legendOutcome">2</b></span> 1X2 only</div>
-          <div class="sub" style="margin-top:4px;">+ <b id="legendBonus">23</b> bonus picks</div>
-          <div class="sub" style="margin-top:2px;">🃏 Power Pick · 🎯 MOTD: ×2</div>
+          <div><span class="sl-pill bonus"><b id="legendBonus">23</b></span> bonus picks</div>
+          <div><span class="sl-pill mult"><b>×2</b></span> 🃏 Power Pick · 🎯 MOTD</div>
         </div>
       </div>
       <div class="hero-stat">
@@ -1397,7 +1399,7 @@
     <div class="lb-side-grid">
       <div class="lb-card">
         <div class="lb-card-title">🦆 Wooden spoon</div>
-        <p class="subtitle">The honorary bottom of the table \u2014 keep grinding.</p>
+        <p class="subtitle">The honorary bottom of the table — keep grinding.</p>
         <div id="reverseLeaderboard"></div>
       </div>
       <div class="lb-card">
@@ -2147,6 +2149,10 @@ function calcAchievements(userName) {
   const userPP = (state.powerPicks || {})[userName] || [];
   const unlocked = new Map();
 
+  // Defensive guard: the tournament itself must have at least 5 settled matches before any
+  // "long-term" medal (Ugly Duckling) can fire. This avoids odd unlocks during early testing.
+  const totalSettled = MATCHES.filter(x => state.results[x.id] && state.results[x.id].h != null && state.results[x.id].a != null).length;
+
   let streak = 0;        // points-scoring streak (only counts settled matches where user had a pick)
   let droughtStreak = 0; // zero-point streak (same scope)
   let exactCount = 0;
@@ -2172,8 +2178,9 @@ function calcAchievements(userName) {
     } else {
       streak = 0;
       droughtStreak++;
-      // Ugly Duckling: only valid if the user has actually played at least 5 settled matches.
-      if (droughtStreak >= 5 && settledWithPick >= 5 && !unlocked.has("ducky")) {
+      // Ugly Duckling: needs the tournament to have run for a while AND the user to have actually
+      // played at least 5 settled matches AND have 5 zero-point ones in a row. All three guards.
+      if (droughtStreak >= 5 && settledWithPick >= 5 && totalSettled >= 5 && !unlocked.has("ducky")) {
         unlocked.set("ducky", ACHIEVEMENT_DEFS.find(a => a.id === "ducky"));
       }
     }
@@ -2552,9 +2559,10 @@ function renderMatchHTML(m) {
   })();
 
   // Power Pick button: usable for the current user, before kick-off, when they have a pick,
-  // when admin isn't impersonating, and only if they still have budget (or already used it here).
+  // when admin isn't impersonating, only if they still have budget (or already used it here),
+  // AND the match doesn't have a final result yet (jokers freeze once the score is in).
   let powerPickBtn = "";
-  if (me && !adminMode && !locked && !isPlaceholder(m, "home") && !isPlaceholder(m, "away")) {
+  if (me && !adminMode && !locked && !hasResult && !isPlaceholder(m, "home") && !isPlaceholder(m, "away")) {
     const used = ((state.powerPicks || {})[me] || []).length;
     const left = POWER_PICK_BUDGET - used;
     if (myPP) {
@@ -2564,6 +2572,9 @@ function renderMatchHTML(m) {
     } else if (left > 0 && !hasPick) {
       powerPickBtn = `<button class="pp-btn" disabled title="Enter your score first">\ud83c\udccf Power Pick</button>`;
     }
+  } else if (myPP) {
+    // Match is over (locked or has result) but player used a joker on it \u2014 keep an inert badge so they remember the \u00d72.
+    powerPickBtn = `<span class="pp-btn pp-active" title="Power Pick joker locked in for this match">\ud83c\udccf Power Pick locked</span>`;
   }
 
   // Reactions bar
@@ -2880,9 +2891,13 @@ function renderExpandContent(node, matchId) {
     const predTxt = `${p.h} : ${p.a}`;
     let ptsTxt = "";
     if (hasResult) {
-      const { pts, kind } = calcMatchPoints(p, result, isKnockout);
+      const opts = { powerPick: hasPowerPick(u.name, m.id), motd: isMatchOfTheDay(m) };
+      const { pts, kind } = calcMatchPoints(p, result, isKnockout, opts);
       const cls = kind === "exact" ? "pts-exact" : kind === "diff" ? "pts-diff" : kind === "outcome" ? "pts-outcome" : "pts-zero";
-      ptsTxt = `<span class="match-points ${cls}">${pts} pts</span>`;
+      const multBadge = (opts.powerPick ? " · 🃏×2" : "") + (opts.motd ? " · 🎯×2" : "");
+      ptsTxt = `<span class="match-points ${cls}">${pts} pts${multBadge}</span>`;
+    } else if (hasPowerPick(u.name, m.id)) {
+      ptsTxt = `<span class="match-points pts-zero">🃏 locked</span>`;
     }
     const meTag = u.name === state.currentUser ? ` <span style="color:var(--text-muted); font-size:11px; font-weight:400;">(you)</span>` : "";
     return `
