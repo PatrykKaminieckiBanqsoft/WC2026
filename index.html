@@ -772,15 +772,21 @@
   .pp-btn.pp-active:hover { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
 
   /* ---------- Trash talk ---------- */
-  .trash-talk { padding: 0 12px 8px; }
+  .trash-talk { padding: 0 12px 8px; display: flex; align-items: center; gap: 8px; }
   .trash-talk-input {
-    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    flex: 1;
+    border: 1px solid var(--border); border-radius: 8px;
     padding: 6px 10px; font-size: 12px;
     background: white; color: var(--text);
     font-family: inherit;
   }
   .trash-talk-input:focus { outline: none; border-color: var(--primary); }
   .trash-talk-input:disabled { background: #f3f4f6; color: var(--text-muted); }
+  .tt-saved {
+    color: var(--success); font-size: 11px; font-weight: 700;
+    background: #d1fae5; padding: 2px 8px; border-radius: 999px;
+    white-space: nowrap;
+  }
   .trash-talk-bubbles { padding: 0 12px 8px; display: flex; flex-direction: column; gap: 4px; }
   .ttb {
     display: flex; align-items: center; gap: 8px;
@@ -788,12 +794,18 @@
     padding: 4px 10px 4px 4px; font-size: 12px;
     max-width: 100%;
   }
+  .ttb.self { background: #fef3c7; border: 1px dashed #fbbf24; }
   .ttb-user {
     display: inline-flex; align-items: center; justify-content: center;
     width: 22px; height: 22px; border-radius: 50%;
     color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;
   }
-  .ttb-text { color: var(--text); font-style: italic; }
+  .ttb-text { color: var(--text); font-style: italic; flex: 1; }
+  .ttb-you {
+    color: #92400e; background: #fde68a; padding: 1px 6px;
+    border-radius: 999px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
 
   /* ---------- Daily roast hero card ---------- */
   .daily-roast {
@@ -1296,7 +1308,7 @@
           <div><span class="sl-pill diff"><b id="legendDiff">3</b></span> goal diff</div>
           <div><span class="sl-pill outcome"><b id="legendOutcome">2</b></span> 1X2 only</div>
           <div class="sub" style="margin-top:4px;">+ <b id="legendBonus">23</b> bonus picks</div>
-          <div class="sub" style="margin-top:2px;">\ud83c\udccf Power Pick \u00b7 \ud83c\udfaf MOTD: \u00d72</div>
+          <div class="sub" style="margin-top:2px;">🃏 Power Pick · 🎯 MOTD: ×2</div>
         </div>
       </div>
       <div class="hero-stat">
@@ -1310,8 +1322,8 @@
         <div class="sub" id="heroRankSub">on the leaderboard</div>
       </div>
       <div class="hero-stat hero-jokers">
-        <div class="label">\ud83c\udccf Power Picks left</div>
-        <div class="value" id="heroJokers">\u2014</div>
+        <div class="label">🃏 Power Picks left</div>
+        <div class="value" id="heroJokers">—</div>
         <div class="sub" id="heroJokersSub">tap a match to spend</div>
       </div>
     </div>
@@ -1384,12 +1396,12 @@
 
     <div class="lb-side-grid">
       <div class="lb-card">
-        <div class="lb-card-title">\ud83e\udd86 Wooden spoon</div>
+        <div class="lb-card-title">🦆 Wooden spoon</div>
         <p class="subtitle">The honorary bottom of the table \u2014 keep grinding.</p>
         <div id="reverseLeaderboard"></div>
       </div>
       <div class="lb-card">
-        <div class="lb-card-title">\ud83c\udfc5 Achievements legend</div>
+        <div class="lb-card-title">🏅 Achievements legend</div>
         <p class="subtitle">Each unique medal unlocks +5 pts the first time it triggers.</p>
         <div id="achievementsLegend"></div>
       </div>
@@ -2135,19 +2147,20 @@ function calcAchievements(userName) {
   const userPP = (state.powerPicks || {})[userName] || [];
   const unlocked = new Map();
 
-  let streak = 0;       // points-scoring streak
-  let droughtStreak = 0; // zero-point streak
+  let streak = 0;        // points-scoring streak (only counts settled matches where user had a pick)
+  let droughtStreak = 0; // zero-point streak (same scope)
   let exactCount = 0;
+  let settledWithPick = 0; // total settled matches where user had a pick; gates Ugly Duckling
+
   for (const m of ordered) {
-    const pred = preds[m.id];
     const result = state.results[m.id];
-    if (!result || result.h == null || result.a == null) continue;
+    if (!result || result.h == null || result.a == null) continue; // skip unplayed matches entirely
+    const pred = preds[m.id];
     if (!pred || pred.h == null || pred.a == null) {
-      streak = 0;
-      droughtStreak++;
-      if (droughtStreak >= 5 && !unlocked.has("ducky")) unlocked.set("ducky", ACHIEVEMENT_DEFS.find(a => a.id === "ducky"));
+      // No pick — doesn't count toward streaks (you weren't in the game for this match)
       continue;
     }
+    settledWithPick++;
     const isKnockout = m.stage !== "group";
     const opts = { powerPick: userPP.includes(m.id), motd: isMatchOfTheDay(m) };
     const { pts, kind } = calcMatchPoints(pred, result, isKnockout, opts);
@@ -2159,7 +2172,10 @@ function calcAchievements(userName) {
     } else {
       streak = 0;
       droughtStreak++;
-      if (droughtStreak >= 5 && !unlocked.has("ducky")) unlocked.set("ducky", ACHIEVEMENT_DEFS.find(a => a.id === "ducky"));
+      // Ugly Duckling: only valid if the user has actually played at least 5 settled matches.
+      if (droughtStreak >= 5 && settledWithPick >= 5 && !unlocked.has("ducky")) {
+        unlocked.set("ducky", ACHIEVEMENT_DEFS.find(a => a.id === "ducky"));
+      }
     }
 
     if (kind === "exact") {
@@ -2454,18 +2470,11 @@ function renderMatches() {
   }
   list.innerHTML = html.join("");
 
-  // Attach event handlers
+  // Attach event handlers via rebindMatch — keeps wiring (score inputs, expand, Power Pick,
+  // reactions, trash talk) in a single place so future additions land for every match tile.
   $$("#matchesList .match").forEach(node => {
     const matchId = Number(node.dataset.id);
-    const inputs = node.querySelectorAll(".score-input");
-    inputs.forEach(inp => {
-      inp.addEventListener("input", e => onScoreInput(e, matchId));
-      inp.addEventListener("blur", e => onScoreBlur(e, matchId));
-    });
-    const teamEdits = node.querySelectorAll(".team-edit");
-    teamEdits.forEach(t => t.addEventListener("click", e => onEditTeam(e, matchId)));
-    const expandBtn = node.querySelector(".match-actions");
-    if (expandBtn) expandBtn.addEventListener("click", () => toggleExpand(node, matchId));
+    rebindMatch(matchId);
     // If this match was expanded before re-render, restore its content
     if (state.expandedMatches && state.expandedMatches.includes(matchId)) {
       renderExpandContent(node, matchId);
@@ -2566,7 +2575,7 @@ function renderMatchHTML(m) {
     return `<button class="reax ${mine ? "mine" : ""}" data-emoji="${e}" title="${users.map(escapeHtml).join(", ") || "react"}">${e}${count > 0 ? `<span class="reax-count">${count}</span>` : ""}</button>`;
   }).join("");
 
-  // Trash talk (visible always, but only editable before lock; others' show only after lock)
+  // Trash talk (visible always for self, others' visible only after lock)
   const myTalk = me ? (((state.trashTalk || {})[me] || {})[m.id] || "") : "";
   const otherTalk = [];
   for (const u of state.users) {
@@ -2577,11 +2586,14 @@ function renderMatchHTML(m) {
   }
   const trashTalkRow = me ? `
     <div class="trash-talk">
-      <input type="text" class="trash-talk-input" data-action="tt" maxlength="80" placeholder="Trash talk (visible after kick-off, max 80 chars)" value="${escapeHtml(myTalk)}" ${locked && !state.adminMode ? "disabled" : ""}>
+      <input type="text" class="trash-talk-input" data-action="tt" maxlength="80" placeholder="Trash talk (press Enter to save, visible to others after kick-off)" value="${escapeHtml(myTalk)}" ${locked && !state.adminMode ? "disabled" : ""}>
+      ${myTalk ? `<span class="tt-saved" title="Saved — teammates will see it after kick-off">✓ saved</span>` : ""}
     </div>` : "";
-  const trashTalkBubbles = otherTalk.length ? `
+  // Always show my own trash talk bubble too, so I can see what I wrote.
+  const allTalk = (myTalk && me) ? [{ user: me, text: myTalk, self: true }, ...otherTalk] : otherTalk;
+  const trashTalkBubbles = allTalk.length ? `
     <div class="trash-talk-bubbles">
-      ${otherTalk.map(t => `<div class="ttb"><span class="ttb-user" style="background:${avatarColor(t.user)};">${initials(t.user)}</span><span class="ttb-text">${escapeHtml(t.text)}</span></div>`).join("")}
+      ${allTalk.map(t => `<div class="ttb${t.self ? ' self' : ''}"><span class="ttb-user" style="background:${avatarColor(t.user)};">${initials(t.user)}</span><span class="ttb-text">${escapeHtml(t.text)}</span>${t.self ? '<span class="ttb-you">you</span>' : ''}</div>`).join("")}
     </div>` : "";
 
   const interactionBar = (me || reactionBtns) ? `
@@ -2702,15 +2714,22 @@ function rebindMatch(matchId) {
   node.querySelectorAll(".reax").forEach(btn => {
     btn.addEventListener("click", () => toggleReaction(matchId, btn.dataset.emoji));
   });
-  // Trash talk
+  // Trash talk — save on Enter, on blur, and debounced while typing
   const tt = node.querySelector("[data-action='tt']");
   if (tt) {
     let ttTimer = null;
     tt.addEventListener("input", e => {
       clearTimeout(ttTimer);
-      ttTimer = setTimeout(() => setTrashTalk(matchId, e.target.value), 500);
+      ttTimer = setTimeout(() => setTrashTalk(matchId, e.target.value, /*refresh*/false), 500);
     });
-    tt.addEventListener("blur", e => setTrashTalk(matchId, e.target.value));
+    tt.addEventListener("blur", e => setTrashTalk(matchId, e.target.value, /*refresh*/true));
+    tt.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        setTrashTalk(matchId, e.target.value, /*refresh*/true);
+        toast("Trash talk saved", "success");
+      }
+    });
   }
 }
 
@@ -2759,7 +2778,7 @@ function toggleReaction(matchId, emoji) {
   }
 }
 
-function setTrashTalk(matchId, text) {
+function setTrashTalk(matchId, text, refresh) {
   const me = state.currentUser;
   if (!me) return;
   const m = MATCHES.find(x => x.id === matchId);
@@ -2768,10 +2787,27 @@ function setTrashTalk(matchId, text) {
   state.trashTalk = state.trashTalk || {};
   state.trashTalk[me] = state.trashTalk[me] || {};
   const clean = (text || "").trim().slice(0, 80);
+  const prev = state.trashTalk[me][matchId];
   if (clean) state.trashTalk[me][matchId] = clean;
   else delete state.trashTalk[me][matchId];
   if (Object.keys(state.trashTalk[me]).length === 0) delete state.trashTalk[me];
-  saveState();
+  if (clean !== (prev || "")) saveState();
+  // After Enter / blur: refresh just this match tile so the saved bubble + tag appear.
+  if (refresh) {
+    const node = document.querySelector(`.match[data-id="${matchId}"]`);
+    if (node) {
+      node.outerHTML = renderMatchHTML(m);
+      rebindMatch(matchId);
+      // Re-focus the input so the user can keep typing if they want.
+      const newInput = document.querySelector(`.match[data-id="${matchId}"] [data-action='tt']`);
+      if (newInput) {
+        newInput.focus();
+        const v = newInput.value;
+        newInput.value = "";
+        newInput.value = v;
+      }
+    }
+  }
 }
 
 function onEditTeam(e, matchId) {
