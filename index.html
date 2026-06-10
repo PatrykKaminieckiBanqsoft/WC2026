@@ -1562,13 +1562,63 @@ const BONUS_TYPES = [
   { key: "topScorer",  label: "Top scorer",      ico: "👟", defaultPts: 5 }
 ];
 
-const TOP_SCORER_CANDIDATES = [
-  "Lamine Yamal","Kylian Mbappé","Erling Haaland","Harry Kane","Vinicius Jr.","Lionel Messi",
-  "Florian Wirtz","Pedri","Rodrygo","Cristiano Ronaldo","Phil Foden","Antoine Griezmann",
-  "Bukayo Saka","Jude Bellingham","Julián Álvarez","Cody Gakpo","Mohamed Salah","Achraf Hakimi",
-  "Federico Valverde","Christopher Nkunku","Kai Havertz","Romelu Lukaku","Ousmane Dembélé",
-  "Heung-min Son","Arda Güler","Other player"
+// Top scorer candidates grouped by national team — 48 squads going to WC2026.
+// Each entry has 4-7 most plausible top-scorer candidates (forwards / attacking mids).
+// Players appear in <optgroup> blocks in the dropdown so users can scan by country.
+const TOP_SCORER_TEAMS = [
+  { team: "Argentina",      players: ["Lionel Messi","Lautaro Martínez","Julián Álvarez","Alejandro Garnacho","Nicolás González","Ángel Di María"] },
+  { team: "Algeria",        players: ["Riyad Mahrez","Islam Slimani","Baghdad Bounedjah","Saïd Benrahma"] },
+  { team: "Australia",      players: ["Mitch Duke","Jamie Maclaren","Riley McGree","Mathew Leckie","Awer Mabil"] },
+  { team: "Austria",        players: ["Marko Arnautović","Michael Gregoritsch","Marcel Sabitzer","Christoph Baumgartner"] },
+  { team: "Belgium",        players: ["Romelu Lukaku","Kevin De Bruyne","Jérémy Doku","Loïs Openda","Charles De Ketelaere","Dodi Lukebakio"] },
+  { team: "Bosnia",         players: ["Edin Džeko","Ermedin Demirović","Said Hamulić","Džemal Berberović"] },
+  { team: "Brazil",         players: ["Vinicius Jr.","Rodrygo","Raphinha","Endrick","Estêvão","Neymar","João Pedro"] },
+  { team: "Canada",         players: ["Jonathan David","Cyle Larin","Alphonso Davies","Tajon Buchanan","Jacob Shaffelburg"] },
+  { team: "Cape Verde",     players: ["Bebé","Ryan Mendes","Garry Rodrigues","Willy Semedo","Jamiro Monteiro"] },
+  { team: "Colombia",       players: ["Luis Díaz","James Rodríguez","Jhon Durán","Rafael Borré","Jhon Arias","Daniel Muñoz"] },
+  { team: "Cote d'Ivoire",  players: ["Sébastien Haller","Wilfried Zaha","Jonathan Bamba","Franck Kessié","Simon Adingra"] },
+  { team: "Croatia",        players: ["Andrej Kramarić","Bruno Petković","Mateo Kovačić","Luka Modrić","Igor Matanović"] },
+  { team: "Curaçao",        players: ["Leandro Bacuna","Tahith Chong","Juninho Bacuna","Roshon van Eijma"] },
+  { team: "Czechia",        players: ["Patrik Schick","Adam Hložek","Tomáš Souček","Mojmír Chytil","Tomáš Chorý"] },
+  { team: "DR Congo",       players: ["Cédric Bakambu","Yoane Wissa","Théo Bongonda","Silas Katompa","Fiston Mayele"] },
+  { team: "Ecuador",        players: ["Enner Valencia","Kendry Páez","Jeremy Sarmiento","Pervis Estupiñán"] },
+  { team: "Egypt",          players: ["Mohamed Salah","Omar Marmoush","Mostafa Mohamed","Trezeguet","Mahmoud Hassan"] },
+  { team: "England",        players: ["Harry Kane","Bukayo Saka","Phil Foden","Jude Bellingham","Cole Palmer","Anthony Gordon","Ollie Watkins","Marcus Rashford"] },
+  { team: "France",         players: ["Kylian Mbappé","Ousmane Dembélé","Marcus Thuram","Bradley Barcola","Michael Olise","Antoine Griezmann","Randal Kolo Muani"] },
+  { team: "Germany",        players: ["Florian Wirtz","Kai Havertz","Jamal Musiala","Niclas Füllkrug","Leroy Sané","Serge Gnabry","Tim Kleindienst"] },
+  { team: "Ghana",          players: ["Mohammed Kudus","Iñaki Williams","Jordan Ayew","Antoine Semenyo","Tariq Lamptey"] },
+  { team: "Haiti",          players: ["Frantzdy Pierrot","Duckens Nazon","Carl Sainté","Don Deedson Louicius"] },
+  { team: "Iran",           players: ["Mehdi Taremi","Sardar Azmoun","Karim Ansarifard","Saman Ghoddos"] },
+  { team: "Iraq",           players: ["Aymen Hussein","Mohanad Ali","Ali Al-Hamadi","Zidane Iqbal"] },
+  { team: "Japan",          players: ["Takefusa Kubo","Kaoru Mitoma","Daichi Kamada","Daizen Maeda","Ayase Ueda","Junya Ito"] },
+  { team: "Jordan",         players: ["Yazan Al-Naimat","Mousa Al-Tamari","Ali Olwan","Mahmoud Al-Mardi"] },
+  { team: "Mexico",         players: ["Raúl Jiménez","Santiago Giménez","Hirving Lozano","Henry Martín","Edson Álvarez","Alexis Vega"] },
+  { team: "Morocco",        players: ["Achraf Hakimi","Hakim Ziyech","Youssef En-Nesyri","Ayoub El Kaabi","Brahim Díaz","Bilal El Khannouss"] },
+  { team: "Netherlands",    players: ["Cody Gakpo","Memphis Depay","Donyell Malen","Brian Brobbey","Xavi Simons","Wout Weghorst"] },
+  { team: "New Zealand",    players: ["Chris Wood","Matt Garbett","Marko Stamenić","Kosta Barbarouses"] },
+  { team: "Norway",         players: ["Erling Haaland","Martin Ødegaard","Alexander Sørloth","Antonio Nusa","Oscar Bobb"] },
+  { team: "Panama",         players: ["Cecilio Waterman","José Fajardo","Eric Davis","Adalberto Carrasquilla"] },
+  { team: "Paraguay",       players: ["Antonio Sanabria","Miguel Almirón","Julio Enciso","Diego Gómez"] },
+  { team: "Portugal",       players: ["Cristiano Ronaldo","Rafael Leão","Bruno Fernandes","João Félix","Bernardo Silva","Gonçalo Ramos","Pedro Neto"] },
+  { team: "Qatar",          players: ["Almoez Ali","Akram Afif","Hassan Al-Haydos","Abdelaziz Hatim"] },
+  { team: "Saudi Arabia",   players: ["Salem Al-Dawsari","Saleh Al-Shehri","Firas Al-Buraikan","Mohamed Kanno"] },
+  { team: "Scotland",       players: ["Scott McTominay","John McGinn","Che Adams","Lyndon Dykes","Lawrence Shankland"] },
+  { team: "Senegal",        players: ["Sadio Mané","Nicolas Jackson","Iliman Ndiaye","Boulaye Dia","Ismaïla Sarr"] },
+  { team: "South Africa",   players: ["Lyle Foster","Percy Tau","Themba Zwane","Mihlali Mayambela","Iqraam Rayners"] },
+  { team: "South Korea",    players: ["Heung-min Son","Hwang Hee-chan","Lee Kang-in","Cho Gue-sung","Oh Hyeon-gyu"] },
+  { team: "Spain",          players: ["Lamine Yamal","Pedri","Nico Williams","Mikel Oyarzabal","Álvaro Morata","Dani Olmo","Ferran Torres"] },
+  { team: "Sweden",         players: ["Alexander Isak","Viktor Gyökeres","Anthony Elanga","Dejan Kulusevski","Emil Forsberg"] },
+  { team: "Switzerland",    players: ["Breel Embolo","Granit Xhaka","Xherdan Shaqiri","Zeki Amdouni","Dan Ndoye"] },
+  { team: "Tunisia",        players: ["Wahbi Khazri","Hannibal Mejbri","Issam Jebali","Naïm Sliti"] },
+  { team: "Turkey",         players: ["Arda Güler","Hakan Çalhanoğlu","Kerem Aktürkoğlu","Cenk Tosun","Kenan Yıldız"] },
+  { team: "USA",            players: ["Christian Pulisic","Folarin Balogun","Tim Weah","Ricardo Pepi","Brenden Aaronson","Gio Reyna"] },
+  { team: "Uruguay",        players: ["Darwin Núñez","Federico Valverde","Maximiliano Araújo","Facundo Pellistri","Federico Viñas"] },
+  { team: "Uzbekistan",     players: ["Eldor Shomurodov","Igor Sergeev","Bobur Abdikholikov","Otabek Shukurov"] }
 ];
+
+// Flat list of all candidates + an "Other player" fallback for write-ins / dark horses.
+const TOP_SCORER_OTHER = "Other player";
+const TOP_SCORER_CANDIDATES = TOP_SCORER_TEAMS.flatMap(g => g.players).concat([TOP_SCORER_OTHER]);
 
 const AVATAR_COLORS = [
   "#0a2a5e","#00854e","#c69300","#a3245d","#0c5a83","#7c3aed","#dc2626","#ea580c",
@@ -2237,7 +2287,13 @@ function renderBonus() {
       ? (state.bonusResults[b.key] || "")
       : (userBonus[b.key] || "");
     const opts = b.key === "topScorer"
-      ? TOP_SCORER_CANDIDATES.map(p => `<option value="${escapeHtml(p)}" ${value===p?"selected":""}>${escapeHtml(p)}</option>`).join("")
+      ? (TOP_SCORER_TEAMS.map(g => {
+          const groupOpts = g.players
+            .map(p => `<option value="${escapeHtml(p)}" ${value===p?"selected":""}>${escapeHtml(p)}</option>`)
+            .join("");
+          return `<optgroup label="${escapeHtml(g.team)}">${groupOpts}</optgroup>`;
+        }).join("")
+        + `<optgroup label="—"><option value="${escapeHtml(TOP_SCORER_OTHER)}" ${value===TOP_SCORER_OTHER?"selected":""}>${escapeHtml(TOP_SCORER_OTHER)}</option></optgroup>`)
       : teams.map(t => `<option value="${escapeHtml(t)}" ${value===t?"selected":""}>${escapeHtml(t)}</option>`).join("");
     const pts = state.scoring[b.key];
     const correctHint = state.bonusResults[b.key] && userBonus[b.key]
@@ -2639,13 +2695,15 @@ function renderSettings() {
           }
           const name = e.target.dataset.name;
           if (confirm(`Remove player "${name}" and all their picks?`)) {
+            const removingSelf = state.currentUser === name;
             state.users = state.users.filter(u => u.name !== name);
             delete state.predictions[name];
             delete state.bonus[name];
             // Tombstone with timestamp so a future re-add (with newer createdAt) can override it
             state.deletedUsers = (state.deletedUsers || []).filter(t => (typeof t === "string" ? t : t.name).toLowerCase() !== name.toLowerCase());
             state.deletedUsers.push({ name, at: Date.now() });
-            if (state.currentUser === name) state.currentUser = state.users[0]?.name || null;
+            // Don't auto-switch to another profile — force a deliberate (PIN-protected) pick.
+            if (removingSelf) state.currentUser = null;
             saveState();
             render();
             toast(`Removed: ${name}`);
