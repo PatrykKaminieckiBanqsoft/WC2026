@@ -1568,7 +1568,7 @@
 const JSONBIN_BIN_ID    = "6a280b5eda38895dfea02904";
 const JSONBIN_MASTER_KEY = "$2a$10$GizqxzxbXDuaYzVPJMpADercSd2XYMK42JwiKEGl7SEz2XJPZs/5W";
 const JSONBIN_BASE = "https://api.jsonbin.io/v3/b/";
-const POLL_INTERVAL_MS = 8000;
+const POLL_INTERVAL_MS = 60000;
 </script>
 
 <script>
@@ -4084,14 +4084,41 @@ function schedulePush() {
   pushTimer = setTimeout(() => pushShared(false), 1500);
 }
 
+// We rate-limit foreground pulls to avoid hammering the backend on tab switches
+// or rapid focus events. The polling interval is the real cadence; everything else
+// just makes sure we don't lag too far behind teammates.
+let _lastPullAt = 0;
+const MIN_PULL_GAP_MS = 15000;
+async function pullSharedThrottled(reason) {
+  if (!isStorageConfigured() || isSyncBusy) return;
+  const now = Date.now();
+  if (now - _lastPullAt < MIN_PULL_GAP_MS) return;
+  _lastPullAt = now;
+  await pullShared();
+}
+
 function startSyncPolling() {
   stopSyncPolling();
   pollTimer = setInterval(() => {
-    if (!isSyncBusy) pullShared();
+    // Skip while the tab is hidden — saves a lot of API requests on background tabs.
+    if (typeof document !== "undefined" && document.hidden) return;
+    if (!isSyncBusy) {
+      _lastPullAt = Date.now();
+      pullShared();
+    }
   }, POLL_INTERVAL_MS);
 }
 function stopSyncPolling() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// Pull immediately when the user comes back to the tab/window, but not more than
+// once per MIN_PULL_GAP_MS so we don't spam the backend on quick alt-tabs.
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) pullSharedThrottled("visible");
+  });
+  window.addEventListener("focus", () => pullSharedThrottled("focus"));
 }
 
 async function initSync() {
