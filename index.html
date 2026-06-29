@@ -1916,14 +1916,75 @@ function escapeHtml(s) {
 function getTeamName(match, side) {
   const ov = state.matchOverrides[match.id];
   if (ov && ov[side]) return ov[side];
-  return expandSlot(match[side]);
+  return resolveSlot(match[side]) || expandSlot(match[side]);
 }
 
 // Returns true if the team value is a bracket placeholder (not a real team)
 function isPlaceholder(match, side) {
   const ov = state.matchOverrides[match.id];
   if (ov && ov[side]) return !TEAMS[ov[side]];
-  return !TEAMS[match[side]];
+  const slot = match[side];
+  if (TEAMS[slot]) return false;
+  return !resolveSlot(slot);
+}
+
+// Try to resolve a bracket slot code to an actual team name based on current standings/results.
+// Returns the team name when known, or null when it's still TBD.
+//   1A   -> winner of Group A
+//   2B   -> runner-up of Group B
+//   3A/B/C/D/F or 3ABCDF -> best 3rd place among those groups (FIFA ranking: Pts -> GD -> GF -> name)
+//   Wxx  -> winner of match xx
+//   Lxx  -> loser of match xx
+function resolveSlot(s) {
+  if (!s) return null;
+  if (TEAMS[s]) return s;
+  let m;
+  if ((m = s.match(/^([12])([A-L])$/))) {
+    const pos = Number(m[1]) - 1; // 0 = winner, 1 = runner-up
+    const group = m[2];
+    if (!GROUPS[group]) return null;
+    const standings = calcGroupStandings(group);
+    // Standings are confirmed only when every team in the group has played all 3 games
+    if (standings.some(r => r.P < 3)) return null;
+    return standings[pos]?.team || null;
+  }
+  // openfootball "3A/B/C/D/F" or legacy "3ABCDF"
+  if ((m = s.match(/^3([A-L](?:\/[A-L])*)$/))) {
+    return resolveThird(m[1].split("/"));
+  }
+  if ((m = s.match(/^3([A-L]+)$/))) {
+    return resolveThird(m[1].split(""));
+  }
+  if ((m = s.match(/^W(\d+)$/))) return resolveKnockoutWinner(Number(m[1]), true);
+  if ((m = s.match(/^L(\d+)$/))) return resolveKnockoutWinner(Number(m[1]), false);
+  return null;
+}
+
+// Pick the best 3rd-placed team among the given groups using FIFA tiebreakers.
+function resolveThird(groupIds) {
+  const thirds = [];
+  for (const g of groupIds) {
+    if (!GROUPS[g]) return null;
+    const standings = calcGroupStandings(g);
+    if (standings.some(r => r.P < 3)) return null; // group not finished yet
+    thirds.push(standings[2]); // index 2 = 3rd place
+  }
+  thirds.sort((x, y) => y.Pts - x.Pts || y.GD - x.GD || y.GF - x.GF || x.team.localeCompare(y.team, "en"));
+  return thirds[0]?.team || null;
+}
+
+// Resolve winner/loser of a previous knockout match (matchId is the M-number from the schedule).
+function resolveKnockoutWinner(matchId, wantWinner) {
+  const m = MATCHES.find(x => x.id === matchId);
+  if (!m) return null;
+  const r = state.results[matchId];
+  if (!r || r.h == null || r.a == null) return null;
+  if (r.h === r.a) return null; // draw without admin override: still TBD (penalties go through matchOverrides)
+  const home = getTeamName(m, "home");
+  const away = getTeamName(m, "away");
+  if (!TEAMS[home] || !TEAMS[away]) return null; // earlier slot also unresolved
+  const homeWon = r.h > r.a;
+  return wantWinner ? (homeWon ? home : away) : (homeWon ? away : home);
 }
 
 // Expand bracket slot codes (1A, 2B, 3ACDEF, W73, L101) into Polish display labels.
@@ -1960,7 +2021,7 @@ function flag(name) {
 function getTeamRaw(match, side) {
   const ov = state.matchOverrides[match.id];
   if (ov && ov[side]) return ov[side];
-  return match[side];
+  return resolveSlot(match[side]) || match[side];
 }
 
 function formatDate(iso) {
