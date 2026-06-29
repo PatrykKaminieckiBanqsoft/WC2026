@@ -1916,7 +1916,7 @@ function escapeHtml(s) {
 function getTeamName(match, side) {
   const ov = state.matchOverrides[match.id];
   if (ov && ov[side]) return ov[side];
-  return resolveSlot(match[side]) || expandSlot(match[side]);
+  return resolveSlot(match[side], match.id) || expandSlot(match[side]);
 }
 
 // Returns true if the team value is a bracket placeholder (not a real team)
@@ -1925,17 +1925,19 @@ function isPlaceholder(match, side) {
   if (ov && ov[side]) return !TEAMS[ov[side]];
   const slot = match[side];
   if (TEAMS[slot]) return false;
-  return !resolveSlot(slot);
+  return !resolveSlot(slot, match.id);
 }
 
 // Try to resolve a bracket slot code to an actual team name based on current standings/results.
+// `matchId` is required for 3rd-place slots ("3A/B/C/D/F") because the FIFA allocation depends
+// on the specific R32 match, not just the candidate group list.
 // Returns the team name when known, or null when it's still TBD.
 //   1A   -> winner of Group A
 //   2B   -> runner-up of Group B
-//   3A/B/C/D/F or 3ABCDF -> best 3rd place among those groups (FIFA ranking: Pts -> GD -> GF -> name)
+//   3A/B/C/D/F or 3ABCDF -> the qualified 3rd-place team that gets allocated to this match
 //   Wxx  -> winner of match xx
 //   Lxx  -> loser of match xx
-function resolveSlot(s) {
+function resolveSlot(s, matchId) {
   if (!s) return null;
   if (TEAMS[s]) return s;
   let m;
@@ -1948,29 +1950,95 @@ function resolveSlot(s) {
     if (standings.some(r => r.P < 3)) return null;
     return standings[pos]?.team || null;
   }
-  // openfootball "3A/B/C/D/F" or legacy "3ABCDF"
-  if ((m = s.match(/^3([A-L](?:\/[A-L])*)$/))) {
-    return resolveThird(m[1].split("/"));
-  }
-  if ((m = s.match(/^3([A-L]+)$/))) {
-    return resolveThird(m[1].split(""));
+  // 3rd-place slot — needs the FIFA allocation table because each R32 "3..." slot maps to
+  // exactly one specific group's 3rd-place team (not just "best 3rd among these 5").
+  if (/^3[A-L](?:\/?[A-L])*$/.test(s)) {
+    if (matchId == null) return null;
+    const alloc = bestThirdsAllocation();
+    if (!alloc) return null;
+    const groupId = alloc.get(matchId);
+    if (!groupId) return null;
+    const st = calcGroupStandings(groupId);
+    if (st.some(r => r.P < 3)) return null;
+    return st[2]?.team || null;
   }
   if ((m = s.match(/^W(\d+)$/))) return resolveKnockoutWinner(Number(m[1]), true);
   if ((m = s.match(/^L(\d+)$/))) return resolveKnockoutWinner(Number(m[1]), false);
   return null;
 }
 
-// Pick the best 3rd-placed team among the given groups using FIFA tiebreakers.
-function resolveThird(groupIds) {
-  const thirds = [];
+// Compute the FIFA-style allocation of qualified 3rd-place teams to specific R32 matches.
+// Returns a Map<matchId, groupId> (which group's 3rd-place lands in which R32 match), or
+// null if the group stage isn't finished yet or no valid matching exists.
+//
+// Approach: find the 8 best 3rd-place teams (FIFA tiebreakers), then bipartite-match them
+// to the 8 R32 slots whose candidate-group list contains them. Uses backtracking with the
+// MRV heuristic (most-constrained slot first) so it stays O(small).
+let _thirdsAllocCache = null;
+let _thirdsAllocKey = null;
+function bestThirdsAllocation() {
+  // Cache the result against a fingerprint of group-stage results so we don't recompute
+  // on every render. Recomputed automatically when scores change.
+  const groupIds = Object.keys(GROUPS);
+  const fingerprint = groupIds.map(g => {
+    const st = calcGroupStandings(g);
+    return g + ":" + st.map(r => `${r.team}/${r.Pts}/${r.GD}/${r.GF}/${r.P}`).join("|");
+  }).join(";");
+  if (_thirdsAllocKey === fingerprint && _thirdsAllocCache !== null) return _thirdsAllocCache;
+  _thirdsAllocKey = fingerprint;
+
+  // 1. Pick the top 8 third-place teams across all 12 groups (FIFA tiebreakers).
+  const allThirds = [];
   for (const g of groupIds) {
-    if (!GROUPS[g]) return null;
-    const standings = calcGroupStandings(g);
-    if (standings.some(r => r.P < 3)) return null; // group not finished yet
-    thirds.push(standings[2]); // index 2 = 3rd place
+    const st = calcGroupStandings(g);
+    if (st.some(r => r.P < 3)) { _thirdsAllocCache = null; return null; } // not finished
+    allThirds.push({ group: g, ...st[2] });
   }
-  thirds.sort((x, y) => y.Pts - x.Pts || y.GD - x.GD || y.GF - x.GF || x.team.localeCompare(y.team, "en"));
-  return thirds[0]?.team || null;
+  allThirds.sort((x, y) => y.Pts - x.Pts || y.GD - x.GD || y.GF - x.GF || x.team.localeCompare(y.team, "en"));
+  const qualifiedGroups = new Set(allThirds.slice(0, 8).map(t => t.group));
+
+  // 2. Collect the 8 R32 slots whose value is a 3rd-place placeholder, with their candidate group lists.
+  const slots = [];
+  for (const mm of MATCHES) {
+    if (mm.stage !== "R32") continue;
+    for (const side of ["home", "away"]) {
+      const s = mm[side];
+      let parsed = null;
+      let mm2;
+      if ((mm2 = s.match(/^3([A-L](?:\/[A-L])*)$/))) parsed = mm2[1].split("/");
+      else if ((mm2 = s.match(/^3([A-L]+)$/))) parsed = mm2[1].split("");
+      if (!parsed) continue;
+      const candidates = new Set(parsed.filter(g => qualifiedGroups.has(g)));
+      slots.push({ matchId: mm.id, candidates });
+    }
+  }
+  if (slots.length !== qualifiedGroups.size) { _thirdsAllocCache = null; return null; }
+
+  // 3. Backtracking bipartite matching with MRV heuristic.
+  function solve(remainingSlots, remainingGroups) {
+    if (remainingSlots.length === 0) return new Map();
+    // Sort by fewest viable candidates first; tie-break by matchId for determinism.
+    const slotsLeft = remainingSlots
+      .map(s => ({ matchId: s.matchId, candidates: new Set([...s.candidates].filter(g => remainingGroups.has(g))) }))
+      .sort((a, b) => a.candidates.size - b.candidates.size || a.matchId - b.matchId);
+    const first = slotsLeft[0];
+    if (first.candidates.size === 0) return null;
+    const rest = slotsLeft.slice(1);
+    // Try candidate groups in deterministic order (alphabetical) so the same input gives the same output.
+    for (const g of [...first.candidates].sort()) {
+      const nextGroups = new Set(remainingGroups);
+      nextGroups.delete(g);
+      const result = solve(rest, nextGroups);
+      if (result) {
+        result.set(first.matchId, g);
+        return result;
+      }
+    }
+    return null;
+  }
+  const matching = solve(slots, new Set(qualifiedGroups));
+  _thirdsAllocCache = matching;
+  return matching;
 }
 
 // Resolve winner/loser of a previous knockout match (matchId is the M-number from the schedule).
@@ -2021,7 +2089,7 @@ function flag(name) {
 function getTeamRaw(match, side) {
   const ov = state.matchOverrides[match.id];
   if (ov && ov[side]) return ov[side];
-  return resolveSlot(match[side]) || match[side];
+  return resolveSlot(match[side], match.id) || match[side];
 }
 
 function formatDate(iso) {
