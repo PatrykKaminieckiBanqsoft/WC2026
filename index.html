@@ -392,6 +392,50 @@
     background: var(--bg-2);
   }
 
+  /* Penalty-winner row (knockout draws only) */
+  .match-pen-row {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    border-top: 1px dashed var(--border);
+    background: linear-gradient(to bottom, var(--bg-2), transparent);
+    font-size: 13px;
+    color: var(--text);
+  }
+  .match-pen-row .pen-label {
+    font-weight: 800;
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+  .match-pen-row .pen-opt {
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    font-weight: 600;
+    background: white;
+    transition: all .15s;
+  }
+  .match-pen-row .pen-opt:hover { border-color: var(--primary); color: var(--primary); }
+  .match-pen-row .pen-opt input[type="radio"] { margin: 0; }
+  .match-pen-row .pen-opt.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #07204c;
+  }
+  .match-pen-row .pen-info {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 700;
+    color: var(--info);
+    background: var(--info-bg);
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
   .team {
     display: flex; align-items: center; gap: 12px;
     min-width: 0;
@@ -583,6 +627,14 @@
   .bracket-match-3rd {
     background: var(--bg-2);
     border-style: dashed;
+  }
+  .bracket-match .bm-pen {
+    font-size: 10px;
+    color: var(--info);
+    font-weight: 800;
+    margin-top: 4px;
+    text-align: center;
+    letter-spacing: 0.3px;
   }
   @media (max-width: 720px) {
     .bracket-col-title { font-size: 9px; }
@@ -2042,16 +2094,23 @@ function bestThirdsAllocation() {
 }
 
 // Resolve winner/loser of a previous knockout match (matchId is the M-number from the schedule).
+// Draws are resolved via the admin-set `pen` field on the result ("home" | "away"). Without it,
+// a draw is treated as still TBD so the downstream bracket slot stays a placeholder.
 function resolveKnockoutWinner(matchId, wantWinner) {
   const m = MATCHES.find(x => x.id === matchId);
   if (!m) return null;
   const r = state.results[matchId];
   if (!r || r.h == null || r.a == null) return null;
-  if (r.h === r.a) return null; // draw without admin override: still TBD (penalties go through matchOverrides)
   const home = getTeamName(m, "home");
   const away = getTeamName(m, "away");
   if (!TEAMS[home] || !TEAMS[away]) return null; // earlier slot also unresolved
-  const homeWon = r.h > r.a;
+  let homeWon;
+  if (r.h === r.a) {
+    if (r.pen !== "home" && r.pen !== "away") return null;
+    homeWon = r.pen === "home";
+  } else {
+    homeWon = r.h > r.a;
+  }
   return wantWinner ? (homeWon ? home : away) : (homeWon ? away : home);
 }
 
@@ -2713,6 +2772,32 @@ function renderMatchHTML(m) {
     </div>`;
   })();
 
+  // Penalty-winner row \u2014 only for knockout matches that ended in a draw.
+  // Admin: radio selector (Home / Away / TBD). Non-admin: small pill showing which team advanced.
+  // Scoring is unaffected (regulation+ET only) \u2014 this only feeds the bracket.
+  const isDrawResult = hasResult && result.h === result.a;
+  const penRowHTML = (() => {
+    if (!isKnockout || !isDrawResult) return "";
+    if (adminMode) {
+      const homeRaw = getTeamName(m, "home");
+      const awayRaw = getTeamName(m, "away");
+      const isHome = result.pen === "home";
+      const isAway = result.pen === "away";
+      const isNone = !isHome && !isAway;
+      return `<div class="match-pen-row">
+        <span class="pen-label">\u26bd Advanced on penalties</span>
+        <label class="pen-opt ${isHome ? "selected" : ""}"><input type="radio" name="pen-${m.id}" value="home" ${isHome ? "checked" : ""} data-action="pen"> ${escapeHtml(homeRaw)}</label>
+        <label class="pen-opt ${isAway ? "selected" : ""}"><input type="radio" name="pen-${m.id}" value="away" ${isAway ? "checked" : ""} data-action="pen"> ${escapeHtml(awayRaw)}</label>
+        <label class="pen-opt ${isNone ? "selected" : ""}"><input type="radio" name="pen-${m.id}" value="" ${isNone ? "checked" : ""} data-action="pen"> TBD</label>
+      </div>`;
+    }
+    if (result.pen === "home" || result.pen === "away") {
+      const winnerRaw = result.pen === "home" ? getTeamName(m, "home") : getTeamName(m, "away");
+      return `<div class="match-pen-row"><span class="pen-info">\u26bd ${escapeHtml(winnerRaw)} advanced on penalties</span></div>`;
+    }
+    return "";
+  })();
+
   // Reactions bar
   const matchReactions = (state.reactions || {})[m.id] || {};
   const reactionBtns = REACTION_EMOJIS.map(e => {
@@ -2790,6 +2875,7 @@ function renderMatchHTML(m) {
         </div>
       </div>
       ${resultBandHTML}
+      ${penRowHTML}
       ${interactionBar}
       ${trashTalkRow}
       ${trashTalkBubbles}
@@ -2819,6 +2905,9 @@ function onScoreBlur(e, matchId) {
   if (state.adminMode) {
     state.results[matchId] = state.results[matchId] || { h: null, a: null };
     state.results[matchId][side] = numV;
+    // If both scores are now set and it's no longer a draw, drop any stale pen winner.
+    const r = state.results[matchId];
+    if (r.h != null && r.a != null && r.h !== r.a && r.pen) delete r.pen;
     saveState();
     // Re-render the match to update points labels for current user
     const node = e.target.closest(".match");
@@ -2828,6 +2917,7 @@ function onScoreBlur(e, matchId) {
     renderLeaderboard();
     renderStats();
     renderStandings();
+    renderBracket();
     return;
   }
 
@@ -2859,6 +2949,10 @@ function rebindMatch(matchId) {
   // Reactions
   node.querySelectorAll(".reax").forEach(btn => {
     btn.addEventListener("click", () => toggleReaction(matchId, btn.dataset.emoji));
+  });
+  // Penalty winner (admin only, knockout draws)
+  node.querySelectorAll("[data-action='pen']").forEach(rad => {
+    rad.addEventListener("change", e => onPenWinner(e, matchId));
   });
   // Trash talk — save on Enter, on blur, and debounced while typing
   const tt = node.querySelector("[data-action='tt']");
@@ -2907,6 +3001,28 @@ function toggleReaction(matchId, emoji) {
   row.querySelectorAll(".reax").forEach(btn => {
     btn.addEventListener("click", () => toggleReaction(matchId, btn.dataset.emoji));
   });
+}
+
+// Admin: pick which team advanced on penalties after a knockout draw. Scoring is unchanged
+// (regulation + ET only); this only feeds the bracket so downstream slots can resolve.
+function onPenWinner(e, matchId) {
+  if (!state.adminMode) return;
+  const val = e.target.value;
+  const r = state.results[matchId];
+  if (!r || r.h == null || r.a == null || r.h !== r.a) {
+    toast("Set a draw result first", "error");
+    return;
+  }
+  if (val === "home" || val === "away") {
+    state.results[matchId].pen = val;
+  } else {
+    delete state.results[matchId].pen;
+  }
+  saveState();
+  // Full match-grid + bracket re-render so downstream KO matches resolve to the new team name.
+  renderMatches();
+  renderBracket();
+  toast(val ? "Penalty winner saved" : "Penalty winner cleared", "success");
 }
 
 function setTrashTalk(matchId, text, refresh) {
@@ -3222,14 +3338,20 @@ function bracketMatchHTML(matchId, extraCls = "") {
   const awayName = getTeamName(m, "away");
   const homePh = isPlaceholder(m, "home");
   const awayPh = isPlaceholder(m, "away");
-  const homeIsWinner = hasResult && r.h > r.a;
-  const awayIsWinner = hasResult && r.a > r.h;
+  const isDraw = hasResult && r.h === r.a;
+  const penHome = isDraw && r.pen === "home";
+  const penAway = isDraw && r.pen === "away";
+  const homeIsWinner = hasResult && (r.h > r.a || penHome);
+  const awayIsWinner = hasResult && (r.a > r.h || penAway);
   const cls = (side, isW) => {
     if (!hasResult) return "";
-    if (r.h === r.a) return "";
+    if (isDraw && !penHome && !penAway) return "";
     return isW ? "winner" : "loser";
   };
   const dateLabel = formatDate(m.date);
+  const penInfo = (penHome || penAway)
+    ? `<div class="bm-pen">\u26bd pens: ${escapeHtml(penHome ? homeName : awayName)}</div>`
+    : "";
   return `
     <div class="bracket-match ${hasResult ? "has-result" : ""} ${extraCls}">
       <div class="bm-meta">M${m.id} · ${escapeHtml(dateLabel)}</div>
@@ -3243,6 +3365,7 @@ function bracketMatchHTML(matchId, extraCls = "") {
         <span class="bt-name ${awayPh ? "placeholder" : ""}">${escapeHtml(awayName)}</span>
         <span class="bt-score">${hasResult ? r.a : ""}</span>
       </div>
+      ${penInfo}
     </div>
   `;
 }
@@ -3261,17 +3384,24 @@ function bracketChampionHTML() {
   // Try to infer from final result
   const finalM = MATCHES.find(x => x.id === 104);
   const finalR = state.results[104];
-  if (finalM && finalR && finalR.h != null && finalR.a != null && finalR.h !== finalR.a) {
-    const winnerSide = finalR.h > finalR.a ? "home" : "away";
-    const winnerName = getTeamName(finalM, winnerSide);
-    if (TEAMS[winnerName]) {
-      return `
-        <div class="bracket-match bracket-match-final" style="text-align:center; padding: 20px;">
-          <div style="font-size: 40px; margin-bottom: 6px;">🏆</div>
-          ${flag(winnerName)}
-          <div style="font-weight: 800; margin-top: 6px; font-size: 14px;">${escapeHtml(winnerName)}</div>
-        </div>
-      `;
+  if (finalM && finalR && finalR.h != null && finalR.a != null) {
+    let winnerSide = null;
+    if (finalR.h > finalR.a) winnerSide = "home";
+    else if (finalR.a > finalR.h) winnerSide = "away";
+    else if (finalR.pen === "home" || finalR.pen === "away") winnerSide = finalR.pen;
+    if (winnerSide) {
+      const winnerName = getTeamName(finalM, winnerSide);
+      if (TEAMS[winnerName]) {
+        const penNote = (finalR.h === finalR.a) ? `<div style="font-size: 11px; color: var(--info); font-weight: 700; margin-top: 4px;">\u26bd on penalties</div>` : "";
+        return `
+          <div class="bracket-match bracket-match-final" style="text-align:center; padding: 20px;">
+            <div style="font-size: 40px; margin-bottom: 6px;">🏆</div>
+            ${flag(winnerName)}
+            <div style="font-weight: 800; margin-top: 6px; font-size: 14px;">${escapeHtml(winnerName)}</div>
+            ${penNote}
+          </div>
+        `;
+      }
     }
   }
   return `
@@ -3674,13 +3804,27 @@ async function syncLiveResults() {
       const localHome = getTeamName(local, "home");
       const t1 = normalizeOpenfootballTeam(ofm.team1);
       const t2 = normalizeOpenfootballTeam(ofm.team2);
-      const [ftH, ftA] = (localHome === t1)
+      const orientationFlip = (localHome !== t1);
+      const [ftH, ftA] = !orientationFlip
         ? [ofm.score.ft[0], ofm.score.ft[1]]
         : [ofm.score.ft[1], ofm.score.ft[0]];
 
+      const newResult = { h: ftH, a: ftA };
+      // Knockout draw: capture penalty shootout winner so the bracket can resolve.
+      // openfootball uses `score.p` (sometimes `score.ps`) — `[hostGoals, awayGoals]` in their order.
+      if (ftH === ftA && local.stage !== "group") {
+        const pen = ofm.score.p || ofm.score.ps || null;
+        if (pen && Array.isArray(pen) && pen.length === 2 && pen[0] !== pen[1]) {
+          const ofHomeWon = pen[0] > pen[1];
+          // Map openfootball winner (team1 vs team2) back to our home/away orientation.
+          const localHomeWon = orientationFlip ? !ofHomeWon : ofHomeWon;
+          newResult.pen = localHomeWon ? "home" : "away";
+        }
+      }
+
       const existing = state.results[local.id];
-      if (existing && existing.h === ftH && existing.a === ftA) { alreadyOK++; continue; }
-      state.results[local.id] = { h: ftH, a: ftA };
+      if (existing && existing.h === ftH && existing.a === ftA && existing.pen === newResult.pen) { alreadyOK++; continue; }
+      state.results[local.id] = newResult;
       updated++;
     }
 
